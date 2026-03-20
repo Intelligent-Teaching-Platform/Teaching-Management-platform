@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.MaterialMapper">
+
+
+    <insert id="insert" parameterType="com.example.entity.Material" useGeneratedKeys="true" keyProperty="id">
+        insert into material(name, teacher_name, teacher_id, size, course_id, folder_id, path, create_time)
+        values (#{name}, #{teacherName}, #{teacherId}, #{size}, #{courseId}, #{folderId}, #{path}, #{createTime, jdbcType=TIMESTAMP})
+    </insert>
+
+    <update id="updateById" parameterType="com.example.entity.Material">
+        update material set name = #{name},
+                            teacher_name = #{teacherName},
+                            teacher_id = #{teacherId},
+                            size = #{size},
+                            course_id = #{courseId},
+                            folder_id = #{folderId},
+                            path = #{path},
+                            create_time = #{createTime, jdbcType=TIMESTAMP}
+        where id = #{id}
+    </update>
+
+</mapper>

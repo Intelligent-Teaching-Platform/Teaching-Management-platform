@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.SignInRecordMapper">
+
+    <insert id="insert" parameterType="com.example.entity.SignInRecord">
+        INSERT INTO sign_in_record
+            (sign_in_id, student_id, latitude, longitude, distance, status)
+        VALUES
+            (#{signInId}, #{studentId}, #{latitude}, #{longitude}, #{distance}, #{status})
+    </insert>
+
+    <select id="selectCount" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM sign_in_record
+        WHERE sign_in_id = #{signInId} AND student_id = #{studentId}
+    </select>
+
+    <!-- 或者使用 exists 方法 -->
+    <select id="exists" resultType="java.lang.Boolean">
+        SELECT 1 FROM sign_in_record
+        WHERE sign_in_id = #{signInId} AND student_id = #{studentId}
+        LIMIT 1
+    </select>
+</mapper>

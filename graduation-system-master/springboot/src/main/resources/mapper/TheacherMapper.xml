@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.TeacherMapper">
+    <insert id="insert" parameterType="com.example.entity.Teacher" useGeneratedKeys="true">
+        insert into teacher (id, username, password, name, avatar, role, sex, title, speciality_id)
+        values (#{id}, #{username}, #{password}, #{name}, #{avatar}, #{role}, #{sex}, #{title}, #{specialityId})
+    </insert>
+
+
+    <update id="updateById" parameterType="com.example.entity.Teacher">
+        update teacher set username = #{username}, password = #{password}, name = #{name}, avatar = #{avatar}, role = #{role},sex=#{sex}, title=#{title}, speciality_id=#{specialityId}
+        where id = #{id}
+    </update>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO teacher (username, name, sex, title, speciality_id, password, avatar, role)
+        VALUES
+        <foreach collection="list" item="teacher" separator=",">
+            (#{teacher.username}, #{teacher.name}, #{teacher.sex}, #{teacher.title}, #{teacher.specialityId}, #{teacher.password}, #{teacher.avatar}, #{teacher.role})
+        </foreach>
+    </insert>
+
+    <select id="selectPage" resultType="com.example.entity.Teacher">
+        SELECT
+        t.*,
+        sp.id AS speciality_id,  <!-- 关联专业表获取id -->
+        FROM
+        twacher t
+        LEFT JOIN
+        speciality sp ON t.speciality_id = sp.id
+        WHERE
+        1 = 1
+        <if test="name != null">
+            AND t.name LIKE CONCAT('%', #{name}, '%')
+        </if>
+    </select>
+
+</mapper>

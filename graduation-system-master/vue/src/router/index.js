@@ -1,0 +1,107 @@
+import { createRouter, createWebHashHistory } from 'vue-router'
+
+const router = createRouter({
+  history: createWebHashHistory(),
+  routes: [
+    {
+      path: '/',
+      component: () => import('@/views/Manager.vue'),
+      redirect: '/home',
+      children: [
+        { path: 'person', component: () => import('@/views/manager/Person.vue')},
+        { path: 'tPerson', component: () => import('@/views/manager/TPerson.vue')},
+        { path: 'sPerson', component: () => import('@/views/manager/SPerson.vue')},
+        { path: 'password', component: () => import('@/views/manager/Password.vue')},
+        { path: 'account', component: () => import('@/views/manager/account.vue')},
+        { path: 'resource', component: () => import('@/views/manager/resource.vue') },
+        { path: 'home', component: () => import('@/views/manager/Home.vue')},
+        { path: 'dashboard', component: () => import('@/views/manager/Dashboard.vue'), meta: { title: '总览驾驶舱' } },
+        { path: 'admin', component: () => import('@/views/manager/Admin.vue')},
+        { path: 'clazz', component: () => import('@/views/manager/Clazz.vue')},
+        { path: 'teacher', component: () => import('@/views/manager/Teacher.vue')},
+        { path: 'student', component: () => import('@/views/manager/Student.vue')},
+        { path: 'notice', component: () => import('@/views/manager/Notice.vue')},
+        { path: 'college', component: () => import('@/views/manager/College.vue')},
+        { path: 'speciality', component: () => import('@/views/manager/Speciality.vue')},
+        { path: 'course', component: () => import('@/views/manager/Course.vue')},
+        { path: 'test', component: () => import('@/views/manager/Test.vue')},
+        { path: 'course/courseDetail',
+          component: () => import('@/views/manager/CourseDetail.vue'),
+          children: [
+            { path: 'ai', component: () => import('@/views/courselist/ai.vue') },
+            { path: 'chapter', component: () => import('@/views/courselist/chapter.vue') },
+            { path: 'class', component: () => import('@/views/courselist/class.vue') },
+            { path: 'courseware', component: () => import('@/views/courselist/courseware.vue') },
+            { path: 'material', component: () => import('@/views/courselist/material.vue') },
+            { path: 'document', component: () => import('@/views/courselist/document.vue') },
+            { path: 'test', component: () => import('@/views/courselist/test.vue') },
+            { path: 'task', component: () => import('@/views/courselist/task.vue') },
+            { path: 'teachPlan', component: () => import('@/views/courselist/teachplan.vue') },
+            { path: 'work', component: () => import('@/views/courselist/Work.vue') },
+            { path: 'questionType', component: () => import('@/views/courselist/QuestionType.vue') },
+            { path: 'question', component: () => import('@/views/courselist/question.vue') },
+            { path: 'testPaper', component: () => import('@/views/courselist/TestPaper.vue') },
+            { path: 'exam', component: () => import('@/views/courselist/Exam.vue') },
+            { path: 'score', component: () => import('@/views/courselist/Score.vue') },
+            { path: 'scoreView', component: () => import('@/views/courselist/ScoreView.vue') },
+            { path: 'paper', name: 'Paper', component: () => import('@/views/courselist/Paper.vue'), props: true },
+            { path: 'testPaperView', name: 'testPaper', component: () => import('@/views/courselist/TestPaperView.vue'), props: true },
+          ]},
+        { path: 'choice', component: () => import('@/views/manager/Choice.vue')},
+
+
+        { path: 'courseSidebar',component: () => import('@/views/manager/CourseSidebar.vue')},
+        { path: 'defaultSidebar',component: () => import('@/views/manager/DefaultSidebar.vue')},
+        { path: 'StuCourse', component:  () => import('@/views/manager/StuCourse.vue') },
+
+        { path: 'myCourse', component:  () => import('@/views/manager/MyCourse.vue') },
+        { path: 'myTeach', component:  () => import('@/views/manager/MyTeach.vue') },
+          ]
+    },
+    {
+      path:'/detail/lessonDetail',
+      name:'lessonDetail',
+      component: () => import('@/views/detail/lessonDetail.vue'),
+    },
+    {
+      path:'/detail/document',
+      name:'document',
+      component: () => import('@/views/detail/document.vue'),
+    },
+    {
+      path: '/login',
+      name: 'Login',
+      component: () => import('@/views/Login.vue'),
+      meta: {
+        title: '登录'
+      }
+    },
+    {
+      path: '/register',
+      name: 'Register',
+      component: () => import('@/views/Register.vue'),
+      meta: {
+        title: '注册'
+      }
+    },
+    {
+      path: '/:pathMatch(.*)',
+      name: 'NotFound',
+      component: () => import('@/views/NotFound.vue'),
+      meta: {
+        title: '页面不存在'
+      }
+    }
+  ]
+})
+
+// 路由导航守卫（可选）
+router.beforeEach((to, from, next) => {
+  // 设置页面标题
+  if (to.meta.title) {
+    document.title = `${to.meta.title} - 教学管理系统`
+  }
+  next()
+})
+
+export default router

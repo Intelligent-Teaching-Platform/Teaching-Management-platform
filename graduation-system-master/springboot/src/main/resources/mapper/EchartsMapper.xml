@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.EchartsMapper">
+
+
+    <insert id="insert" parameterType="com.example.entity.Echarts" useGeneratedKeys="true">
+        insert into echarts(id,date, courseId, count)
+        values (#{id}, #{date}, #{courseId}, #{count})</insert>
+
+<!--    <update id="updateById" parameterType="com.example.entity.Notice">-->
+<!--        update notice set title = #{title}, content = #{content}, time = #{time}-->
+<!--        where id = #{id} -->
+<!--    </update>-->
+
+</mapper>

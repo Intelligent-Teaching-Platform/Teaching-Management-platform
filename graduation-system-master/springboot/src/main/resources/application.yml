@@ -1,0 +1,47 @@
+server:
+  port: 9090
+
+# 数据库配置
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: Root@123456
+#    Root@123456
+    url: jdbc:mysql://118.31.64.90:3306/tms?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8&allowPublicKeyRetrieval=true
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+  main:
+    allow-bean-definition-overriding: true
+
+# 配置mybatis实体和xml映射
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+
+# 文件上传的前缀url
+fileBaseUrl: http://118.31.64.90:9090
+
+
+# JWT 配置
+jwt:
+  secret: "your-256-bit-secret"  # 必须替换为真实密钥（推荐32位以上随机字符串）
+  expiration: 86400              # 过期时间（秒），86400秒=24小时
+  issuer: "your-app-name"        # 签发者名称
+
+
+mybatis-plus:
+  global-config:
+    db-config:
+      ddl-runner: false  # 禁用 DDL Runner
+
+
+
+
+
+

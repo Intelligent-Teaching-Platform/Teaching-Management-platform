@@ -1,0 +1,6 @@
+
+# 开发环境可选配置（通过 spring.profiles.active=dev 启用）
+# 关闭 MyBatis SQL 控制台输出，减少日志噪音
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl

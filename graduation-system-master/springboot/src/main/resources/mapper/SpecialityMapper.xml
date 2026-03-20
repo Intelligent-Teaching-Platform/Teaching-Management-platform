@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.SpecialityMapper">
+
+
+    <insert id="insert" parameterType="com.example.entity.Speciality" useGeneratedKeys="true">
+        insert into speciality(id, name, college_id)
+        values (#{id}, #{name}, #{collegeId})
+    </insert>
+
+    <update id="updateById" parameterType="com.example.entity.Speciality">
+        update speciality set name = #{name}, college_id = #{collegeId}
+        where id = #{id}
+    </update>
+
+</mapper>
