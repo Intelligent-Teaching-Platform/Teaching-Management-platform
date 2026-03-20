@@ -34,9 +34,10 @@
     </div>
     <!-- 管理员视图：表格布局 -->
     <div class="card table-view" v-if="data.user.role === 'ADMIN'">
-      <div style="margin-bottom: 10px" v-if="data.user.role === 'ADMIN'">
+      <div style="margin-bottom: 10px" v-if="data.user.role === 'ADMIN' || data.user.role === 'TEACHER'">
         <el-button type="primary" @click="handleAdd">新增</el-button>
         <el-button type="primary" @click="triggerFileInput">批量导入</el-button>
+        <el-button type="success" @click="downloadImportTemplate">下载导入模板</el-button>
         <input
             type="file"
             ref="fileInput"
@@ -116,8 +117,15 @@
         <el-form-item label="开班人数" prop="num">
           <el-input v-model="data.form.num" autocomplete="off" />
         </el-form-item>
+        <el-form-item label="学期" prop="term">
+          <el-input v-model="data.form.term" autocomplete="off" />
+        </el-form-item>
         <el-form-item label="上课时间" prop="time">
-          <el-input v-model="data.form.time" autocomplete="off" />
+          <el-input
+              v-model="data.form.time"
+              autocomplete="off"
+              placeholder="如：8：00-10：00"
+          />
         </el-form-item>
         <el-form-item label="上课地点" prop="location">
           <el-input v-model="data.form.location" autocomplete="off" />
@@ -205,6 +213,28 @@ const handleFileUpload = async (event) => {
     event.target.value = '';
   }
 };
+
+// 下载导入模板（后端生成 xlsx）
+const downloadImportTemplate = async () => {
+  try {
+    const response = await request.get('/course/importTemplate', { responseType: 'blob' })
+    const blob = response?.data instanceof Blob ? response.data : new Blob([response?.data || response], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = '课程批量导入模板.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(url)
+  } catch (e) {
+    const msg = e?.response?.data?.msg || e?.message || '未知错误'
+    const status = e?.response?.status ? `（HTTP ${e.response.status}）` : ''
+    ElMessage.error('模板下载失败：' + msg + status)
+  }
+}
 
 // 根据教师姓名查询课程（教师端使用）
 const loadByTeacherName = () => {

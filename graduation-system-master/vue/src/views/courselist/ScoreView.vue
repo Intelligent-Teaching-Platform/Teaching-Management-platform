@@ -1,144 +1,247 @@
 <template>
   <div>
-    <div class="card" style="margin-bottom: 5px">
-      <el-input v-model="data.name" prefix-icon="Search" style="width: 240px; margin-right: 10px" placeholder="请输入试卷名称查询"></el-input>
-      <el-input v-model="data.courseName" prefix-icon="Search" style="width: 240px; margin-right: 10px" placeholder="请输入课程名称查询"></el-input>
-      <el-input v-model="data.status" prefix-icon="Search" style="width: 240px; margin-right: 10px" placeholder="请输入阅卷状态查询"></el-input>
-      <el-button type="info" plain @click="load">查询</el-button>
-      <el-button type="warning" plain style="margin: 0 10px" @click="reset">重置</el-button>
+    <div class="card" style="margin-bottom: 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+      <el-select
+          v-model="data.paperId"
+          placeholder="请选择试卷"
+          style="width: 280px"
+          clearable
+          @change="loadStats"
+      >
+        <el-option
+            v-for="p in data.papers"
+            :key="p.id"
+            :label="p.name"
+            :value="p.id"
+        />
+      </el-select>
+
+      <el-button type="info" plain @click="loadStats" :disabled="!data.paperId">
+        刷新统计
+      </el-button>
     </div>
 
-    <div class="card" style="margin-bottom: 5px">
-      <el-table stripe :data="data.tableData">
-        <el-table-column prop="name" label="试卷名称" show-overflow-tooltip/>
-        <el-table-column prop="courseName" label="课程名称" show-overflow-tooltip/>
-        <el-table-column prop="teacherName" label="授课教师" show-overflow-tooltip/>
-        <el-table-column prop="studentName" label="学生姓名" show-overflow-tooltip/>
-        <el-table-column prop="status" label="试卷状态" show-overflow-tooltip>
-          <template v-slot="scope">
-            <el-tag v-if="scope.row.status === '已阅卷'" type="success">{{ scope.row.status }}</el-tag>
-            <el-tag v-if="scope.row.status === '待阅卷'" type="danger">{{ scope.row.status }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="score" label="分数" show-overflow-tooltip/>
-        <el-table-column label="操作" width="100" fixed="right">
-          <template v-slot="scope">
-            <el-button :disabled="scope.row.status === '已阅卷'" type="primary" @click="handleEdit(scope.row)">阅卷</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </div>
-    <div class="card" v-if="data.total">
-      <el-pagination @current-change="load" background layout="prev, pager, next" :page-size="data.pageSize"
-                     v-model:current-page="data.pageNum" :total="data.total"/>
-    </div>
+    <el-alert
+        v-if="!data.paperId"
+        title="请先选择试卷"
+        type="info"
+        show-icon
+        :closable="false"
+    />
 
-    <el-dialog title="答案信息" v-model="data.formVisible" width="85%" destroy-on-close>
-      <el-table stripe :data="data.answerData">
-        <el-table-column prop="questionName" label="题目" show-overflow-tooltip/>
-        <el-table-column prop="score" label="分数" show-overflow-tooltip width="60"/>
-        <el-table-column prop="typeName" label="题型" show-overflow-tooltip width="80"/>
-        <el-table-column prop="answer" label="标准答案" show-overflow-tooltip width="350">
-<!--          <template v-slot="scope">-->
-<!--            <el-input v-if="scope.row.typeName === '简答题'" type="textarea" :rows="8" v-model="scope.row.answer"-->
-<!--                      disabled></el-input>-->
-<!--            <span v-else>{{ scope.row.answer }}</span>-->
-<!--          </template>-->
-        </el-table-column>
-<!--        <el-table-column prop="newAnswer" label="学生答案" show-overflow-tooltip width="350">-->
-<!--          <template v-slot="scope">-->
-<!--            <el-input v-if="scope.row.typeName === '简答题'" type="textarea" :rows="8" v-model="scope.row.newAnswer"-->
-<!--                      disabled></el-input>-->
-<!--            <span v-else>{{ scope.row.newAnswer }}</span>-->
-<!--          </template>-->
-<!--        </el-table-column>-->
-<!--        <el-table-column prop="result" label="得分" show-overflow-tooltip width="150">-->
-<!--          <template v-slot="scope">-->
-<!--            <el-input v-if="scope.row.typeName === '简答题'" v-model="scope.row.result"-->
-<!--                      placeholder="输入分数"></el-input>-->
-<!--            <span v-else>{{ scope.row.result }}</span>-->
-<!--          </template>-->
-<!--        </el-table-column>-->
-      </el-table>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="data.formVisible = false">取 消</el-button>
-          <el-button type="primary" @click="update">提 交</el-button>
-        </span>
-      </template>
-    </el-dialog>
+    <div v-else>
+      <div class="card" style="margin-bottom: 12px;">
+        <div style="font-weight: 700; margin-bottom: 8px;">已做学生</div>
+        <el-table stripe :data="data.doneList" style="width: 100%;">
+          <el-table-column prop="studentName" label="学生姓名" show-overflow-tooltip/>
+          <el-table-column prop="score" label="得分" width="120" show-overflow-tooltip/>
+        </el-table>
+        <div v-if="!data.doneList.length" style="color: #999; padding: 12px 0;">暂无已做数据</div>
+      </div>
+
+      <div class="card" style="margin-bottom: 12px;">
+        <div style="font-weight: 700; margin-bottom: 8px;">未做学生</div>
+        <el-table stripe :data="data.undoneList" style="width: 100%;">
+          <el-table-column prop="studentName" label="学生姓名" show-overflow-tooltip/>
+        </el-table>
+        <div v-if="!data.undoneList.length" style="color: #999; padding: 12px 0;">暂无未做数据</div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight: 700; margin-bottom: 8px;">客观题错误率排行</div>
+        <el-table
+            v-if="data.errorRankList.length"
+            stripe
+            :data="data.errorRankList"
+            style="width: 100%;"
+        >
+          <el-table-column prop="questionName" label="题目" show-overflow-tooltip/>
+          <el-table-column prop="answeredCount" label="作答次数" width="120"/>
+          <el-table-column prop="wrongCount" label="错误次数" width="120"/>
+          <el-table-column prop="errorRate" label="错误率(%)" width="140"/>
+        </el-table>
+        <div v-else style="color: #999; padding: 12px 0;">暂无错误率排行数据</div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-
-import {reactive} from "vue";
+import { reactive, onMounted } from "vue";
+import { useRoute } from "vue-router";
 import request from "@/utils/request.js";
-import {ElMessage, ElMessageBox} from "element-plus";
-import {Delete, Edit} from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
 
+const route = useRoute();
+
+const round1 = (v) => {
+  const num = Number(v);
+  if (Number.isNaN(num)) return 0;
+  return Math.round(num * 10) / 10;
+};
+
+const formatScore1 = (v) => {
+  if (v === null || v === undefined || v === "") return "";
+  const num = Number(v);
+  if (Number.isNaN(num)) return "";
+  return num.toFixed(1);
+};
+
+const safeParseArray = (text) => {
+  if (!text) return [];
+  try {
+    const res = JSON.parse(text);
+    return Array.isArray(res) ? res : [];
+  } catch (e) {
+    return [];
+  }
+};
 
 const data = reactive({
-  user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
-  formVisible: false,
-  tableData: [],
-  pageNum: 1,
-  pageSize: 10,
-  total: 0,
-  name: null,
-  courseName: null,
-  status: null,
-  answerData: [],
-  form: {}
-})
+  user: JSON.parse(localStorage.getItem("system-user") || "{}"),
+  papers: [],
+  paperId: null,
 
-const load = () => {
-  request.get('/score/selectPage', {
+  courseName: route.query?.courseName ?? null,
+  courseId: route.query?.id ?? route.params?.id ?? null,
+  teacherId: null,
+
+  doneList: [],
+  undoneList: [],
+  errorRankList: [],
+});
+
+data.teacherId = data.user?.id ?? null;
+
+const loadPapers = async () => {
+  if (!data.teacherId || !data.courseName) return;
+
+  const res = await request.get("/testPaper/selectPage", {
     params: {
-      pageNum: data.pageNum,
-      pageSize: data.pageSize,
-      name: data.name,
+      pageNum: 1,
+      pageSize: 100,
+      teacherId: data.teacherId,
       courseName: data.courseName,
-      status: data.status
-    }
-  }).then(res => {
-    if (res.code === '200') {
-      data.tableData = res.data?.list || []
-      data.total = res.data?.total
-    } else {
-      ElMessage.error(res.msg)
-    }
-  })
-}
-const handleEdit = (row) => {
-  data.form = JSON.parse(JSON.stringify(row))
-  request.get('/score/selectAnswer/' + row.id).then(res => {
-    if (res.code === '200') {
-      data.answerData = res.data
-      data.formVisible = true
-    } else {
-      ElMessage.error(res.msg)
-    }
-  })
-}
+    },
+  });
 
-const update = () => {
-  data.form.answerData = data.answerData
-  request.put('/score/update', data.form).then(res => {
-    if (res.code === '200') {
-      ElMessage.success('操作成功')
-      data.formVisible = false
-      load()
+  if (res.code === "200") {
+    data.papers = res.data?.list || [];
+    if (!data.paperId && data.papers.length) {
+      data.paperId = data.papers[0].id;
     }
-  })
-}
+  } else {
+    ElMessage.error(res.msg || "试卷列表加载失败");
+  }
+};
 
-const reset = () => {
-  data.name = null
-  data.courseName = null
-  data.status = null
-  load()
-}
+const loadStats = async () => {
+  if (!data.paperId || !data.courseId || !data.teacherId) return;
 
-load()
+  try {
+    const [studentsRes, scoresRes, questionsRes] = await Promise.all([
+      request.get("/student/selectByCourseId", {
+        params: { courseId: data.courseId },
+      }),
+      request.get("/score/selectPage", {
+        params: {
+          pageNum: 1,
+          pageSize: 1000,
+          courseId: data.courseId,
+          teacherId: data.teacherId,
+          paperId: data.paperId,
+        },
+      }),
+      request.get("/question/selectPage", {
+        params: {
+          pageNum: 1,
+          pageSize: 300,
+          courseId: data.courseId,
+          teacherId: data.teacherId,
+        },
+      }),
+    ]);
+
+    const students = studentsRes.data || [];
+    const scoreList = scoresRes.data?.list || [];
+    const questionList = questionsRes.data?.list || [];
+
+    const questionNameMap = new Map();
+    for (const q of questionList) {
+      if (q?.id != null) questionNameMap.set(q.id, q.name || `题目#${q.id}`);
+    }
+
+    const doneStudentIdSet = new Set();
+    data.doneList = scoreList.map((s) => {
+      doneStudentIdSet.add(s.studentId);
+      return {
+        studentId: s.studentId,
+        studentName: s.studentName,
+        score: formatScore1(s.score),
+      };
+    });
+
+    data.undoneList = students
+        .filter((stu) => !doneStudentIdSet.has(stu.id))
+        .map((stu) => ({ studentId: stu.id, studentName: stu.name }));
+
+    // 客观题错误率排行：只统计已作答客观题（未作答不参与分母）
+    const objectiveTypes = new Set(["单选题", "判断题"]);
+    const statMap = new Map(); // questionId -> { answeredCount, wrongCount }
+
+    for (const s of scoreList) {
+      const answerRows = safeParseArray(s.answer);
+      for (const row of answerRows) {
+        if (!row || row.questionId == null) continue;
+        if (!objectiveTypes.has(row.typeName)) continue;
+
+        const questionId = row.questionId;
+        const studentAnswer = row.newAnswer;
+        const correctAnswer = row.answer;
+
+        const answered = studentAnswer != null && String(studentAnswer).trim() !== "";
+        if (!answered) continue;
+
+        const cur = statMap.get(questionId) || { answeredCount: 0, wrongCount: 0 };
+        cur.answeredCount += 1;
+        if (String(studentAnswer).trim() !== String(correctAnswer).trim()) {
+          cur.wrongCount += 1;
+        }
+        statMap.set(questionId, cur);
+      }
+    }
+
+    const rankList = [];
+    for (const [questionId, v] of statMap.entries()) {
+      const errorRate = v.answeredCount ? round1((100 * v.wrongCount) / v.answeredCount) : 0;
+      rankList.push({
+        questionId,
+        questionName: questionNameMap.get(questionId) || `题目#${questionId}`,
+        answeredCount: v.answeredCount,
+        wrongCount: v.wrongCount,
+        errorRate: errorRate,
+      });
+    }
+
+    rankList.sort((a, b) => {
+      if (b.errorRate !== a.errorRate) return b.errorRate - a.errorRate;
+      return b.wrongCount - a.wrongCount;
+    });
+
+    data.errorRankList = rankList.slice(0, 10).map((x) => ({
+      questionId: x.questionId,
+      questionName: x.questionName,
+      answeredCount: x.answeredCount,
+      wrongCount: x.wrongCount,
+      errorRate: `${x.errorRate.toFixed(1)}`,
+    }));
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.msg || e?.message || "统计加载失败");
+  }
+};
+
+onMounted(async () => {
+  await loadPapers();
+  await loadStats();
+});
 </script>

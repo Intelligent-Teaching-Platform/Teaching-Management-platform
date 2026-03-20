@@ -16,7 +16,7 @@
         <el-table-column label="名称" prop="name"></el-table-column>
         <el-table-column label="头像">
           <template #default="scope">
-            <el-image :src="resolveAvatarUrl(scope.row.avatar)" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover" fit="cover">
+            <el-image :src="resolveAvatarUrl(scope.row.avatar) || adminDefaultAvatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover" fit="cover">
               <template #error>
                 <div class="avatar-placeholder"><span>头像</span></div>
               </template>
@@ -77,6 +77,7 @@ import request from '@/utils/request'
 import { reactive } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { getUploadUrl, resolveAvatarUrl } from '@/utils/appConfig'
+import adminDefaultAvatar from '@/assets/imgs/admin-default-avatar.png'
 
 const uploadUrl = getUploadUrl()
 

@@ -122,10 +122,12 @@
 <script setup>
 
 import {reactive} from "vue";
+import { useRoute } from "vue-router";
 import request from "@/utils/request.js";
 import {ElMessage, ElMessageBox} from "element-plus";
 import {Delete, Edit} from "@element-plus/icons-vue";
 
+const route = useRoute();
 
 const data = reactive({
   user: JSON.parse(localStorage.getItem('system-user') || '{}'),
@@ -138,8 +140,16 @@ const data = reactive({
   name: null,
   ids: [],
   courseData: [],
-  questionData: []
+  questionData: [],
+  teacherId: null,
+  courseName: null,
+  courseId: null,
 })
+
+// 从“课程详情”路由参数中继承筛选条件
+data.teacherId = data.user?.id ?? null;
+data.courseName = route.query?.courseName ?? null;
+data.courseId = route.query?.id ?? route.params?.id ?? null;
 const loadCourse = () => {
   request.get('/course/selectAll', {
     params: {
@@ -171,7 +181,9 @@ const load = () => {
     params: {
       pageNum: data.pageNum,
       pageSize: data.pageSize,
-      name: data.name
+      name: data.name,
+      teacherId: data.teacherId,
+      courseName: data.courseName,
     }
   }).then(res => {
     if (res.code === '200') {
@@ -181,8 +193,17 @@ const load = () => {
   })
 }
 const handleAdd = () => {
-  data.form = {}
+  data.form = {
+    // 让“出卷”默认绑定当前课程（课程详情中传入的 id）
+    courseId: data.courseId != null ? Number(data.courseId) : null,
+  }
   data.formVisible = true
+  // 弹窗打开时如果 courseId 已有值，则需要主动加载题目
+  if (data.form.courseId != null) {
+    loadQuestion(data.form.courseId)
+  } else {
+    data.questionData = []
+  }
 }
 const add = () => {
   data.form.teacherId = data.user.id

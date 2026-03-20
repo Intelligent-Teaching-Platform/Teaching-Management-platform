@@ -31,6 +31,10 @@
       <el-icon><Notebook /></el-icon>
       <span>课程资料</span>
     </el-menu-item>
+    <el-menu-item v-if="data.user.role === 'TEACHER'" :index="menuPath('/course/courseDetail/export')">
+      <el-icon><FolderOpened /></el-icon>
+      <span>资料导出</span>
+    </el-menu-item>
 <!--    <el-menu-item :index="`/course/courseDetail/chapter?courseName=${route.query.courseName}`">-->
 <!--      <el-icon><DocumentChecked /></el-icon>-->
 <!--      <span>章节</span>-->
@@ -68,7 +72,7 @@
     </el-menu-item>
     <el-menu-item v-if="data.user.role === 'TEACHER'" :index="menuPath('/course/courseDetail/scoreView')">
       <el-icon><Document /></el-icon>
-      <span>阅卷</span>
+      <span>批改</span>
     </el-menu-item>
   </el-menu>
 
@@ -77,6 +81,7 @@
 
 <script setup>
 import {ArrowLeftBold} from '@element-plus/icons-vue'
+import { FolderOpened } from '@element-plus/icons-vue'
 import {onMounted, reactive, ref, watch} from 'vue'
 import router from "@/router";
 import {useRoute} from "vue-router";

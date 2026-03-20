@@ -17,8 +17,12 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -123,6 +127,108 @@ public class CourseController {
             return Result.success("成功导入" + courses.size() + "条数据");
         } catch (Exception e) {
             return Result.error("导入失败，失败原因：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 下载课程批量导入模板（与 /course/import 固定列顺序严格对齐）
+     */
+    @GetMapping("/importTemplate")
+    public void downloadImportTemplate(HttpServletResponse response) throws IOException {
+        String fileName = "课程批量导入模板.xlsx";
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment;filename=" + URLEncoder.encode(fileName, StandardCharsets.UTF_8));
+
+        try (Workbook workbook = new XSSFWorkbook(); ServletOutputStream os = response.getOutputStream()) {
+            Sheet sheet = workbook.createSheet("导入模板");
+            Sheet help = workbook.createSheet("说明");
+
+            // 表头（固定列顺序：0..10）
+            Row header = sheet.createRow(0);
+            header.createCell(0).setCellValue("课程名称(name)");
+            header.createCell(1).setCellValue("课程介绍(content)");
+            header.createCell(2).setCellValue("课程学分(score，数字)");
+            header.createCell(3).setCellValue("授课教师(teacherName)");
+            header.createCell(4).setCellValue("开班人数(num，数字)");
+            header.createCell(5).setCellValue("上课时间(time)");
+            header.createCell(6).setCellValue("上课地点(location)");
+            header.createCell(7).setCellValue("班级(className 或 classId)");
+            header.createCell(8).setCellValue("所属学院(collegeName)");
+            header.createCell(9).setCellValue("已选人数(alreadyNum，可留空)");
+            header.createCell(10).setCellValue("学期(term)");
+
+            // 示例行（可删除后填写）
+            Row example = sheet.createRow(1);
+            example.createCell(0).setCellValue("数据结构");
+            example.createCell(1).setCellValue("基础数据结构与算法");
+            example.createCell(2).setCellValue(3);
+            example.createCell(3).setCellValue("张三");
+            example.createCell(4).setCellValue(50);
+            example.createCell(5).setCellValue("周一 1-2节");
+            example.createCell(6).setCellValue("A101");
+            example.createCell(7).setCellValue("计科2201");
+            example.createCell(8).setCellValue("计算机学院");
+            example.createCell(9).setCellValue(0);
+            example.createCell(10).setCellValue("2025-2026-1");
+
+            for (int i = 0; i <= 10; i++) {
+                sheet.autoSizeColumn(i);
+                int w = sheet.getColumnWidth(i);
+                sheet.setColumnWidth(i, Math.min(Math.max(w + 1024, 4096), 20000));
+            }
+
+            // ===== 说明 Sheet =====
+            int r = 0;
+            Row t0 = help.createRow(r++);
+            t0.createCell(0).setCellValue("课程批量导入说明（请勿改动“导入模板”Sheet 的列顺序）");
+
+            r++; // 空一行
+            Row t1 = help.createRow(r++);
+            t1.createCell(0).setCellValue("列顺序与含义（导入模板 Sheet，按 0..10 列固定解析）");
+            Row h = help.createRow(r++);
+            h.createCell(0).setCellValue("列序号");
+            h.createCell(1).setCellValue("表头");
+            h.createCell(2).setCellValue("要求/说明");
+
+            Object[][] rows = new Object[][]{
+                    {0, "课程名称(name)", "必填"},
+                    {1, "课程介绍(content)", "可选"},
+                    {2, "课程学分(score)", "必填；数字（如 3）"},
+                    {3, "授课教师(teacherName)", "必填；必须是系统中已存在的教师姓名，否则导入报错"},
+                    {4, "开班人数(num)", "必填；数字"},
+                    {5, "上课时间(time)", "可选；如 “周一 1-2节”"},
+                    {6, "上课地点(location)", "可选；如 “A101”"},
+                    {7, "班级(className 或 classId)", "推荐填班级名称；也兼容纯数字班级ID"},
+                    {8, "所属学院(collegeName)", "必填；必须是系统中已存在的学院名称，否则导入报错"},
+                    {9, "已选人数(alreadyNum)", "可留空或填 0；导入后系统会重置为 0"},
+                    {10, "学期(term)", "可选；如 “2025-2026-1”"},
+            };
+
+            for (Object[] one : rows) {
+                Row rr = help.createRow(r++);
+                rr.createCell(0).setCellValue(((Number) one[0]).intValue());
+                rr.createCell(1).setCellValue(String.valueOf(one[1]));
+                rr.createCell(2).setCellValue(String.valueOf(one[2]));
+            }
+
+            r++;
+            Row t2 = help.createRow(r++);
+            t2.createCell(0).setCellValue("常见错误与解决");
+            Row e1 = help.createRow(r++);
+            e1.createCell(0).setCellValue("1) “教师不存在”：请确认第 4 列填写的是教师姓名（与系统教师管理中的姓名一致）");
+            Row e2 = help.createRow(r++);
+            e2.createCell(0).setCellValue("2) “学院不存在”：请确认第 9 列填写的是学院名称（与学院信息中的名称一致）");
+            Row e3 = help.createRow(r++);
+            e3.createCell(0).setCellValue("3) “班级不存在”：请确认第 8 列填写班级名称，或填写纯数字班级ID");
+
+            for (int i = 0; i <= 2; i++) {
+                help.autoSizeColumn(i);
+                int w = help.getColumnWidth(i);
+                help.setColumnWidth(i, Math.min(Math.max(w + 1024, 4096), 26000));
+            }
+
+            workbook.write(os);
+            os.flush();
         }
     }
 

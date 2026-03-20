@@ -55,7 +55,9 @@ public class CollegeService {
         return collegeList.stream()
                 .collect(Collectors.toMap(
                         College::getName,  // 键：学院名称
-                        College::getId    // 值：学院ID
+                        College::getId,   // 值：学院ID
+                        // 同名学院取第一个，避免 toMap 抛异常导致导入失败
+                        (a, b) -> a
                 ));
     }
 }

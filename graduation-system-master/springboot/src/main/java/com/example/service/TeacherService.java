@@ -89,7 +89,12 @@ public class TeacherService {
 
     public Map<String, Integer> getNameIdMap() {
         return teacherMapper.selectAll().stream()
-                .collect(Collectors.toMap(Teacher::getName, Teacher::getId));
+                .collect(Collectors.toMap(
+                        Teacher::getName,   // 键：教师姓名
+                        Teacher::getId,     // 值：教师ID
+                        // 同名教师取第一个，避免 toMap 抛异常导致导入失败
+                        (a, b) -> a
+                ));
     }
 
     @Transactional  //添加事务管理

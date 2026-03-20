@@ -28,8 +28,8 @@ public class ScoreController {
      */
     @PostMapping("/add")
     public Result add(@RequestBody TestPaper testPaper) {
-        scoreService.add(testPaper);
-        return Result.success();
+        Score score = scoreService.add(testPaper);
+        return Result.success(score);
     }
 
     /**
