@@ -1,7 +1,7 @@
 <template>
-  <div class="courseware-container">
+  <div class="homework-page">
     <!-- 页面标题 -->
-    <el-card class="box-card">
+    <el-card class="box-card homework-card">
       <template #header>
         <div class="card-header">
           <div class="card-header-text">

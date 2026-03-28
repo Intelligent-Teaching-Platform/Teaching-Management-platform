@@ -35,7 +35,7 @@
       </el-form>
       <div style="text-align: right;">
         还没有账号？请 <router-link to="/register">注册</router-link> |
-        <router-link to="/forgot-password">忘记密码？</router-link>
+        <a href="javascript:void(0)" @click="handleForgotPassword">忘记密码？</a>
       </div>
     </div>
   </div>
@@ -68,6 +68,10 @@ const data = reactive({
 })
 
 const formRef = ref()
+
+const handleForgotPassword = () => {
+  ElMessage.warning("联系管理员修改密码")
+}
 
 const login = () => {
   // if (!data.agreed) {

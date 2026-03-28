@@ -9,9 +9,10 @@ export function getServerUrl() {
   return config.serverUrl
 }
 
-/** 文件上传接口地址（头像等） */
+/** 文件上传接口完整地址（el-upload 不会走 axios baseURL，需直连后端，否则易 404） */
 export function getUploadUrl() {
-  return '/files/upload'
+  const base = String(getServerUrl() || '').replace(/\/$/, '')
+  return base ? `${base}/files/upload` : '/files/upload'
 }
 
 /**

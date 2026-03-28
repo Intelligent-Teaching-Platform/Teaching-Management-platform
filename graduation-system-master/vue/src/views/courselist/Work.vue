@@ -1,6 +1,6 @@
 <template>
-  <div class="work-page">
-    <el-card class="box-card">
+  <div class="homework-page">
+    <el-card class="box-card homework-card">
       <template #header>
         <div class="card-header">
           <div class="card-header-text">

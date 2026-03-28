@@ -1,14 +1,28 @@
 package com.example.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+/** 忽略 JSON 中列表关联带来的多余字段（如仅有 getter 的扩展字段），避免反序列化异常 */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Task {
     private Integer id;
     private String name;
     private String content;
+    /** 封面图（文件上传后返回的 URL） */
+    private String cover;
     private Integer classId;
     private Integer courseId; // 课程ID（用于隔离跨课程数据）
     private Integer lab;
     private Integer teacherId;
     private String className;  // 班级名称（关联查询）
+
+    public String getCover() {
+        return cover;
+    }
+
+    public void setCover(String cover) {
+        this.cover = cover;
+    }
 
     public String getClassName() {
         return className;

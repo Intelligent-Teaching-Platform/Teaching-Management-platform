@@ -47,14 +47,15 @@ public interface TaskMapper {
     @Delete("delete from task where id = #{id}")
     void deleteById(Integer id);
 
-    @Insert("INSERT INTO task (name, content, class_id, lab, teacher_id, course_id) " +
-            "VALUES (#{name}, #{content}, #{classId}, #{lab}, #{teacherId}, #{courseId})")
+    @Insert("INSERT INTO task (name, content, cover, class_id, lab, teacher_id, course_id) " +
+            "VALUES (#{name}, #{content}, #{cover}, #{classId}, #{lab}, #{teacherId}, #{courseId})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     void insert(Task task);
 
     @Update("UPDATE task SET " +
             "name = #{name}, " +
             "content = #{content}, " +
+            "cover = #{cover}, " +
             "class_id = #{classId}, " +
             "lab = #{lab}, " +
             "teacher_id = #{teacherId}, " +

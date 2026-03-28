@@ -31,22 +31,18 @@
       <el-icon><Notebook /></el-icon>
       <span>课程资料</span>
     </el-menu-item>
-<!--    <el-menu-item :index="`/course/courseDetail/chapter?courseName=${route.query.courseName}`">-->
-<!--      <el-icon><DocumentChecked /></el-icon>-->
-<!--      <span>章节</span>-->
-<!--    </el-menu-item>-->
-    <el-menu-item :index="menuPath('/course/courseDetail/courseware')">
+   <!-- <el-menu-item :index="`/course/courseDetail/chapter?courseName=${route.query.courseName}`">
+     <el-icon><DocumentChecked /></el-icon>
+     <span>章节</span>
+   </el-menu-item> -->
+    <el-menu-item :index="menuPath('/course/courseDetail/homework')">
       <el-icon><Tickets /></el-icon>
-      <span>课后作业</span>
+      <span>作业</span>
     </el-menu-item>
-<!--    <el-menu-item :index="`/course/courseDetail/test?courseName=${route.query.courseName}`">-->
-<!--      <el-icon><ChatLineRound /></el-icon>-->
-<!--      <span>讨论</span>-->
-<!--    </el-menu-item>-->
-    <el-menu-item :index="menuPath('/course/courseDetail/work')">
-      <el-icon><Tickets /></el-icon>
-      <span>实验作业</span>
-    </el-menu-item>
+    <!-- <el-menu-item :index="`/course/courseDetail/test?courseName=${route.query.courseName}`">
+     <el-icon><ChatLineRound /></el-icon>
+     <span>讨论</span>
+    </el-menu-item> -->
 
     <el-menu-item v-if="data.user.role === 'STUDENT'" :index="menuPath('/course/courseDetail/exam')">
       <el-icon><Tickets /></el-icon>
@@ -57,11 +53,6 @@
       <span>试卷</span>
     </el-menu-item>
 
-    <el-menu-item v-if="data.user.role === 'TEACHER'" :index="menuPath('/course/courseDetail/question')">
-      <el-icon><Box /></el-icon>
-      <span>题库</span>
-    </el-menu-item>
-
     <el-menu-item v-if="data.user.role === 'TEACHER'" :index="menuPath('/course/courseDetail/testPaper')">
       <el-icon><Document /></el-icon>
       <span>出卷</span>
@@ -69,6 +60,10 @@
     <el-menu-item v-if="data.user.role === 'TEACHER'" :index="menuPath('/course/courseDetail/scoreView')">
       <el-icon><Document /></el-icon>
       <span>阅卷</span>
+    </el-menu-item>
+    <el-menu-item v-if="data.user.role === 'TEACHER'" :index="menuPath('/course/courseDetail/question')">
+      <el-icon><Box /></el-icon>
+      <span>题库</span>
     </el-menu-item>
   </el-menu>
 

@@ -31,6 +31,15 @@ const router = createRouter({
             { path: 'ai', component: () => import('@/views/courselist/ai.vue') },
             { path: 'chapter', component: () => import('@/views/courselist/chapter.vue') },
             { path: 'class', component: () => import('@/views/courselist/class.vue') },
+            {
+              path: 'homework',
+              component: () => import('@/views/courselist/homework.vue'),
+              redirect: '/course/courseDetail/homework/courseware',
+              children: [
+                { path: 'courseware', component: () => import('@/views/courselist/courseware.vue') },
+                { path: 'work', component: () => import('@/views/courselist/Work.vue') },
+              ],
+            },
             { path: 'courseware', component: () => import('@/views/courselist/courseware.vue') },
             { path: 'material', component: () => import('@/views/courselist/material.vue') },
             { path: 'document', component: () => import('@/views/courselist/document.vue') },
