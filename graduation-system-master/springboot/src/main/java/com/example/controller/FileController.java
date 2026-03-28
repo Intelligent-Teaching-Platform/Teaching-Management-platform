@@ -85,29 +85,16 @@ public class FileController {
      */
     @GetMapping("/download/{fileName:.+}")
     public void download(@PathVariable String fileName, HttpServletResponse response) {
-<<<<<<< HEAD
         String decodedName = decodeFileName(fileName);
         // 设置下载文件http响应头
         response.setHeader("Content-Disposition", "attachment;filename=" + URLEncoder.encode(decodedName, StandardCharsets.UTF_8));
-=======
->>>>>>> 12012a98ba1fb750dcfa8e672b48e801575990b0
         // 拼接完整的文件存储路径
         String realFilePath = getStorageDir() + File.separator + decodedName;
         try {
-<<<<<<< HEAD
             if (!FileUtil.exist(realFilePath)) {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
-=======
-            // 文件不存在时不要抛异常，避免前端头像请求导致 500
-            if (!FileUtil.exist(realFilePath)) {
-                response.setStatus(404);
-                return;
-            }
-            // 设置下载文件http响应头
-            response.setHeader("Content-Disposition", "attachment;filename=" + URLEncoder.encode(fileName, StandardCharsets.UTF_8));
->>>>>>> 12012a98ba1fb750dcfa8e672b48e801575990b0
             // 通过文件的存储路径拿到文件字节数组
             byte[] bytes = FileUtil.readBytes(realFilePath);
             ServletOutputStream os = response.getOutputStream();
@@ -115,7 +102,6 @@ public class FileController {
             os.write(bytes);
             os.flush();
             os.close();
-<<<<<<< HEAD
         } catch (IOException e) {
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -144,11 +130,6 @@ public class FileController {
         } catch (IOException e) {
             e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-=======
-        } catch (Exception e) {
-            response.setStatus(500);
-            System.out.println("文件下载错误: " + e.getMessage());
->>>>>>> 12012a98ba1fb750dcfa8e672b48e801575990b0
         }
     }
 

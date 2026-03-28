@@ -31,23 +31,11 @@
       <el-icon><Notebook /></el-icon>
       <span>课程资料</span>
     </el-menu-item>
-<<<<<<< HEAD
    <!-- <el-menu-item :index="`/course/courseDetail/chapter?courseName=${route.query.courseName}`">
      <el-icon><DocumentChecked /></el-icon>
      <span>章节</span>
    </el-menu-item> -->
     <el-menu-item :index="menuPath('/course/courseDetail/homework')">
-=======
-    <el-menu-item v-if="data.user.role === 'TEACHER'" :index="menuPath('/course/courseDetail/export')">
-      <el-icon><FolderOpened /></el-icon>
-      <span>资料导出</span>
-    </el-menu-item>
-<!--    <el-menu-item :index="`/course/courseDetail/chapter?courseName=${route.query.courseName}`">-->
-<!--      <el-icon><DocumentChecked /></el-icon>-->
-<!--      <span>章节</span>-->
-<!--    </el-menu-item>-->
-    <el-menu-item :index="menuPath('/course/courseDetail/courseware')">
->>>>>>> 12012a98ba1fb750dcfa8e672b48e801575990b0
       <el-icon><Tickets /></el-icon>
       <span>作业</span>
     </el-menu-item>
