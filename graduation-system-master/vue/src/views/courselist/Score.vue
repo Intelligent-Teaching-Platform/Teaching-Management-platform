@@ -8,8 +8,8 @@
         <el-table-column prop="teacherName" label="授课教师" show-overflow-tooltip/>
         <el-table-column prop="status" label="试卷状态" show-overflow-tooltip>
           <template v-slot="scope">
-            <el-tag v-if="scope.row.status === '已阅卷'" type="success">{{ scope.row.status }}</el-tag>
-            <el-tag v-if="scope.row.status === '待阅卷'" type="danger">{{ scope.row.status }}</el-tag>
+            <el-tag v-if="scope.row.status === '已阅卷'" type="success">已批改</el-tag>
+            <el-tag v-if="scope.row.status === '待阅卷'" type="danger">待批改</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="score" label="分数" show-overflow-tooltip/>
@@ -33,6 +33,7 @@ import {ElMessage} from "element-plus";
 import router from "@/router";
 
 const data = reactive({
+  user: JSON.parse(localStorage.getItem('system-user') || '{}'),
   tableData: [],
   pageNum: 1,
   pageSize: 5,
@@ -43,7 +44,9 @@ const load = () => {
   request.get('/score/selectPage', {
     params: {
       pageNum: data.pageNum,
-      pageSize: data.pageSize
+      pageSize: data.pageSize,
+      // 学生端只看自己的成绩
+      studentId: data.user?.id
     }
   }).then(res => {
     if (res.code === '200') {

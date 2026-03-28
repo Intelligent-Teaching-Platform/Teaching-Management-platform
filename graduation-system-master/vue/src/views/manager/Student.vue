@@ -10,6 +10,7 @@
       <div style="margin-bottom: 10px">
         <el-button type="primary" @click="handleAdd">新增</el-button>
         <el-button type="primary" @click="triggerFileInput">批量导入</el-button>
+        <el-button type="success" @click="downloadImportTemplate">下载导入模板</el-button>
         <input
             type="file"
             ref="fileInput"
@@ -23,7 +24,7 @@
         <el-table-column label="用户名" prop="username"></el-table-column>
         <el-table-column label="头像" prop="avatar">
           <template v-slot="scope">
-            <el-image :src="resolveAvatarUrl(scope.row.avatar)" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover" fit="cover">
+            <el-image :src="resolveAvatarUrl(scope.row.avatar) || studentDefaultAvatar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover" fit="cover">
               <template #error>
                 <div class="avatar-placeholder"><el-icon><Avatar /></el-icon></div>
               </template>
@@ -73,7 +74,12 @@
                 style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover"
                 fit="cover"
             />
-            <el-icon v-else size="100"><Avatar /></el-icon>
+            <el-image
+                v-else
+                :src="studentDefaultAvatar"
+                style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover"
+                fit="cover"
+            />
           </el-upload>
         </el-form-item>
         <el-form-item label="账号" prop="username">
@@ -128,6 +134,7 @@ import request from '@/utils/request'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Avatar } from '@element-plus/icons-vue'
 import { getUploadUrl, resolveAvatarUrl } from '@/utils/appConfig'
+import studentDefaultAvatar from '@/assets/imgs/student-default-avatar.png'
 
 const uploadUrl = getUploadUrl()
 const fileInput = ref(null);
@@ -148,6 +155,32 @@ const data = reactive({
 const triggerFileInput = () => {
   fileInput.value.click();
 };
+
+// 下载导入模板（后端生成 xlsx）
+const downloadImportTemplate = async () => {
+  try {
+    const response = await request.get('/student/importTemplate', { responseType: 'blob' })
+    const blob =
+      response?.data instanceof Blob
+        ? response.data
+        : new Blob([response?.data || response], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = '学生批量导入模板.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(url)
+  } catch (e) {
+    const msg = e?.response?.data?.msg || e?.message || '未知错误'
+    const status = e?.response?.status ? `（HTTP ${e.response.status}）` : ''
+    ElMessage.error('模板下载失败：' + msg + status)
+  }
+}
 
 // 处理文件上传
 const handleFileUpload = async (event) => {

@@ -272,10 +272,10 @@
         </el-form-item>
         <template v-if="data.user.role === 'TEACHER' && data.form.lab === 2">
           <el-form-item label="学生·题目">
-            <el-input v-model="data.form.studentStageTitle" type="textarea" :rows="2" disabled placeholder="学生未填写" />
+            <el-input v-model="data.form.studentStageTitle" type="textarea" :rows="2" disabled placeholder="学生无需填写" />
           </el-form-item>
           <el-form-item label="学生·要求">
-            <el-input v-model="data.form.studentStageRequirement" type="textarea" :rows="3" disabled placeholder="学生未填写" />
+            <el-input v-model="data.form.studentStageRequirement" type="textarea" :rows="3" disabled placeholder="学生无需填写" />
           </el-form-item>
         </template>
         <div class="form-section">
@@ -286,7 +286,7 @@
                 :rows="4"
                 show-word-limit
                 maxlength="500"
-                placeholder="请输入实验目的"
+                placeholder="学生无需填写"
                 :disabled="data.form.lab === 2"
             />
           </el-form-item>
@@ -328,7 +328,7 @@
         </div>
         </template>
 
-        <el-form-item label="任务打分" prop="score" v-if="data.user.role === 'TEACHER'">
+        <el-form-item label="评分" prop="score" v-if="data.user.role === 'TEACHER'">
           <el-input v-model="data.form.score" autocomplete="off"/>
         </el-form-item>
         <el-form-item label="修改意见" prop="amendment" v-if="data.user.role === 'TEACHER'">

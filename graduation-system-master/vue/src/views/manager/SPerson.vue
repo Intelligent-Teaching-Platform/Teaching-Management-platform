@@ -5,7 +5,7 @@
         <div style="margin: 20px 0; text-align: center">
           <el-upload :show-file-list="false" class="avatar-uploader" :action="uploadUrl" :on-success="handleFileUpload">
             <img v-if="data.user.avatar" :src="resolveAvatarUrl(data.user.avatar)" class="avatar" />
-            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+            <img v-else :src="studentDefaultAvatar" class="avatar" />
           </el-upload>
         </div>
         <el-form-item label="账号">
@@ -42,6 +42,7 @@ import { reactive } from 'vue'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
 import { getUploadUrl, resolveAvatarUrl } from '@/utils/appConfig'
+import studentDefaultAvatar from '@/assets/imgs/student-default-avatar.png'
 
 const uploadUrl = getUploadUrl()
 

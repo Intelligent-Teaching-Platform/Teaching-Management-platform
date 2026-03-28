@@ -11,6 +11,7 @@
       <div style="margin-bottom: 10px">
         <el-button type="primary" @click="handleAdd">新增</el-button>
         <el-button type="primary" @click="triggerFileInput">批量导入</el-button>
+        <el-button type="success" @click="downloadImportTemplate">下载导入模板</el-button>
         <input
             type="file"
             ref="fileInput"
@@ -245,6 +246,32 @@ const triggerFileInput = () => {
   fileInput.value.click();
 };
 
+
+// 下载导入模板（后端生成 xlsx）
+const downloadImportTemplate = async () => {
+  try {
+    const response = await request.get('/teacher/importTemplate', { responseType: 'blob' })
+    const blob =
+      response?.data instanceof Blob
+        ? response.data
+        : new Blob([response?.data || response], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          })
+
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = '教师批量导入模板.xlsx'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    window.URL.revokeObjectURL(url)
+  } catch (e) {
+    const msg = e?.response?.data?.msg || e?.message || '未知错误'
+    const status = e?.response?.status ? `（HTTP ${e.response.status}）` : ''
+    ElMessage.error('模板下载失败：' + msg + status)
+  }
+}
 
 // 处理文件上传
 const handleFileUpload = async (event) => {
