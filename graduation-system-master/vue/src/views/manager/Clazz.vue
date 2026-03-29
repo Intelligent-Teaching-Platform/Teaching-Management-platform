@@ -13,6 +13,7 @@
       <el-table :data="data.tableData" stripe style="font-size: 16px;">
         <el-table-column label="班级名称" prop="name"></el-table-column>
         <el-table-column label="开班时间" prop="createTime"></el-table-column>
+        <el-table-column label="学生人数" prop="studentNum"></el-table-column>
 
         <el-table-column label="操作" align="center" width="180" v-if="data.user.role === 'ADMIN'">
           <template #default="scope">

@@ -81,23 +81,23 @@
 
 
 
-    <!--course表与teacher表，college表进行关联查询实现id与name进行转换 -->
+    <!--course表与teacher表，college表，clazz表进行关联查询实现id与name进行转换 -->
     <select id="selectPage" resultType="com.example.entity.Course">
         SELECT
         c.*,
-        t.name AS teacher_name,  <!-- 关联教师表获取名称 -->
-        co.name AS college_name  <!-- 关联学院表获取名称 -->
+        t.name AS teacherName,
+        co.name AS collegeName,
+        clz.name AS className
         FROM
         course c
-        LEFT JOIN
-        teacher t ON c.teacher_id = t.id
-        LEFT JOIN
-        college co ON c.college_id = co.id
+        LEFT JOIN teacher t ON c.teacher_id = t.id
+        LEFT JOIN college co ON c.college_id = co.id
+        LEFT JOIN clazz clz ON c.class_id = clz.id
         <where>
-            <if test="name != null">
+            <if test="name != null and name != ''">
                 AND c.name LIKE CONCAT('%', #{name}, '%')
             </if>
         </where>
     </select>
-    </mapper>
+</mapper>
 

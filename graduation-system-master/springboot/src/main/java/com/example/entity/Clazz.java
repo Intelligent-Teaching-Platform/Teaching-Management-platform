@@ -7,6 +7,7 @@ public class Clazz {
     private Integer collegeId;
     private String createTime;
     private Integer clazzId;
+    private Integer studentNum;
 
     public Integer getId() {
         return id;
@@ -54,5 +55,13 @@ public class Clazz {
 
     public void setClazzId(Integer clazzId) {
         this.clazzId = clazzId;
+    }
+
+    public Integer getStudentNum() {
+        return studentNum;
+    }
+
+    public void setStudentNum(Integer studentNum) {
+        this.studentNum = studentNum;
     }
 }

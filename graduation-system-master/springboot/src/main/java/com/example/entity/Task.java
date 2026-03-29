@@ -15,6 +15,10 @@ public class Task {
     private Integer lab;
     private Integer teacherId;
     private String className;  // 班级名称（关联查询）
+    /** 多个班级ID，用逗号分隔（如 "1,2,3"），用于多班级发放 */
+    private String classIds;
+    /** 多个班级名称，用逗号分隔 */
+    private String classNames;
 
     public String getCover() {
         return cover;
@@ -30,6 +34,22 @@ public class Task {
 
     public void setClassName(String className) {
         this.className = className;
+    }
+
+    public String getClassIds() {
+        return classIds;
+    }
+
+    public void setClassIds(String classIds) {
+        this.classIds = classIds;
+    }
+
+    public String getClassNames() {
+        return classNames;
+    }
+
+    public void setClassNames(String classNames) {
+        this.classNames = classNames;
     }
 
     public Integer getTeacherId() {

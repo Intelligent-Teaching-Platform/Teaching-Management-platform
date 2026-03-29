@@ -17,6 +17,22 @@ import java.util.List;
 public class TaskController {
     @Resource
     private TaskService taskService;
+
+    /**
+     * 获取当前教师+课程关联的班级列表（用于发布任务时选择班级）
+     * @param teacherId 教师ID
+     * @param courseId 课程ID（优先使用，更精确）
+     * @param courseName 课程名称（兼容旧参数）
+     */
+    @GetMapping("/selectClasses")
+    public Result selectClasses(
+            @RequestParam(required = false) Integer teacherId,
+            @RequestParam(required = false) Integer courseId,
+            @RequestParam(required = false) String courseName) {
+        List<Task> list = taskService.selectClassesByTeacherAndCourse(teacherId, courseId, courseName);
+        return Result.success(list);
+    }
+
     /**
      * 增加
      */

@@ -7,6 +7,83 @@ import java.util.List;
 
 public interface TaskMapper {
 
+    /**
+     * 根据教师ID和课程名称获取该教师所有同名课程关联的班级列表
+     * 用于发布任务时选择班级
+     */
+    @Select("<script>" +
+            "SELECT DISTINCT clz.id as classId, clz.name as className " +
+            "FROM course c " +
+            "JOIN course_class cc ON c.id = cc.course_id " +
+            "JOIN clazz clz ON cc.class_id = clz.id " +
+            "WHERE c.teacher_id = #{teacherId} " +
+            "<if test='courseId != null'> AND c.id = #{courseId} </if>" +
+            "<if test='courseName != null and courseName != \"\"'> AND c.name = #{courseName} </if>" +
+            "ORDER BY clz.id" +
+            "</script>")
+    List<Task> selectClassesByTeacherAndCourse(@Param("teacherId") Integer teacherId,
+                                               @Param("courseId") Integer courseId,
+                                               @Param("courseName") String courseName);
+
+    /**
+     * 根据课程ID查询关联的所有班级（返回 Task 对象，包含 classId 和 className）
+     */
+    @Select("SELECT clz.id as classId, clz.name as className " +
+            "FROM course_class cc " +
+            "JOIN clazz clz ON cc.class_id = clz.id " +
+            "WHERE cc.course_id = #{courseId} " +
+            "ORDER BY clz.id")
+    List<Task> selectClassesByCourseId(@Param("courseId") Integer courseId);
+
+    /**
+     * 根据班级ID查询任务（用于课程详情页按当前班级过滤）
+     */
+    @Select("SELECT t.*, c.name as className FROM task t " +
+            "LEFT JOIN clazz c ON t.class_id = c.id " +
+            "WHERE t.class_id = #{classId} " +
+            "ORDER BY t.id DESC")
+    List<Task> selectByClassId(@Param("classId") Integer classId);
+
+    /**
+     * 根据课程ID和班级ID查询任务
+     */
+    @Select("SELECT t.*, c.name as className FROM task t " +
+            "LEFT JOIN clazz c ON t.class_id = c.id " +
+            "WHERE t.course_id = #{courseId} AND t.class_id = #{classId} " +
+            "ORDER BY t.id DESC")
+    List<Task> selectByCourseIdAndClassId(@Param("courseId") Integer courseId, @Param("classId") Integer classId);
+
+    @Select("SELECT t.*, c.name as className FROM task t " +
+            "LEFT JOIN clazz c ON t.class_id = c.id " +
+            "WHERE t.course_id = #{courseId} AND t.class_id = #{classId} AND t.name LIKE CONCAT('%', #{name}, '%') " +
+            "ORDER BY t.id DESC")
+    List<Task> selectByCourseIdAndClassIdAndName(@Param("courseId") Integer courseId, @Param("classId") Integer classId, @Param("name") String name);
+
+    @Select("SELECT t.*, c.name as className FROM task t " +
+            "LEFT JOIN clazz c ON t.class_id = c.id " +
+            "WHERE t.teacher_id = #{teacherId} AND t.course_id = #{courseId} AND t.class_id = #{classId} " +
+            "ORDER BY t.id DESC")
+    List<Task> selectByTeacherIdAndCourseIdAndClassId(@Param("teacherId") Integer teacherId, @Param("courseId") Integer courseId, @Param("classId") Integer classId);
+
+    @Select("SELECT t.*, c.name as className FROM task t " +
+            "LEFT JOIN clazz c ON t.class_id = c.id " +
+            "WHERE t.teacher_id = #{teacherId} AND t.course_id = #{courseId} AND t.class_id = #{classId} AND t.name LIKE CONCAT('%', #{name}, '%') " +
+            "ORDER BY t.id DESC")
+    List<Task> selectByTeacherIdAndCourseIdAndClassIdAndName(@Param("teacherId") Integer teacherId, @Param("courseId") Integer courseId, @Param("classId") Integer classId, @Param("name") String name);
+
+    /**
+     * 根据课程ID查询任务（包含班级信息）
+     */
+    @Select("SELECT t.*, c.name as className, " +
+            "GROUP_CONCAT(DISTINCT cc2.class_id) as classIds " +
+            "FROM task t " +
+            "LEFT JOIN clazz c ON t.class_id = c.id " +
+            "LEFT JOIN course_class cc2 ON t.course_id = cc2.course_id " +
+            "WHERE t.course_id = #{courseId} " +
+            "GROUP BY t.id " +
+            "ORDER BY t.id DESC")
+    List<Task> selectByCourseIdWithClasses(@Param("courseId") Integer courseId);
+
     @Select("select t.*, c.name as className from task t " +
             "left join clazz c on t.class_id = c.id " +
             "order by t.id desc")

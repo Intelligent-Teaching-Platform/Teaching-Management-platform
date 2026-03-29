@@ -76,6 +76,15 @@ public class StudentController {
     }
 
     /**
+     * 重置学生密码为 123456
+     */
+    @PutMapping("/resetPassword/{id}")
+    public Result resetPassword(@PathVariable Integer id) {
+        studentService.resetPassword(id);
+        return Result.success();
+    }
+
+    /**
      * 根据ID查询学生
      */
     @GetMapping("/selectById/{id}")
@@ -268,7 +277,17 @@ public class StudentController {
                     throw new RuntimeException("第" + (i + 1) + "行班级不存在: " + classCell);
                 }
                 student.setClassId(classId);
-                student.setRole("student");
+                student.setRole("STUDENT");
+
+                // 密码默认：学号后6位（若学号不足6位则用完整学号）
+                String code = student.getCode();
+                if (code != null && code.length() >= 6) {
+                    student.setPassword(code.substring(code.length() - 6));
+                } else if (code != null) {
+                    student.setPassword(code);
+                } else {
+                    student.setPassword("123456"); // 学号为空时的兜底
+                }
 
                 students.add(student);
             }

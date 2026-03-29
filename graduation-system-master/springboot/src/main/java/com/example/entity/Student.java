@@ -17,6 +17,7 @@ public class Student extends Account {
     private String collegeName;
     private  int classId;;
     private String completionRate;
+    private Integer specialityId;
 
     public String getCompletionRate() {
         return completionRate;
@@ -132,5 +133,13 @@ public class Student extends Account {
 
     public void setClassId(int classId) {
         this.classId = classId;
+    }
+
+    public Integer getSpecialityId() {
+        return specialityId;
+    }
+
+    public void setSpecialityId(Integer specialityId) {
+        this.specialityId = specialityId;
     }
 }

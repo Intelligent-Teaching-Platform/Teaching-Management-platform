@@ -18,6 +18,16 @@
         SELECT * FROM student WHERE class_id = #{classId}
     </select>
 
+    <!-- 登录查询：如果 role 为 NULL，默认设为 STUDENT -->
+    <select id="selectByUsernameForLogin" resultType="com.example.entity.Student">
+        SELECT s.*,
+               college.name AS collegeName,
+               IFNULL(s.role, 'STUDENT') AS role
+        FROM student s
+        LEFT JOIN college ON s.college_id = college.id
+        WHERE s.username = #{username}
+    </select>
+
     <insert id="batchInsert" parameterType="java.util.List">
         INSERT INTO student (username, name, sex, code, score, college_id, class_id, role)
         VALUES

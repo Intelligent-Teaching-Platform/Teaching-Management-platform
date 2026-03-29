@@ -31,6 +31,15 @@ public class QuestionController {
     }
 
     /**
+     * 批量导入
+     */
+    @PostMapping("/import/batch")
+    public Result importBatch(@RequestBody List<Question> questions) {
+        int count = questionService.addBatch(questions);
+        return Result.success(count);
+    }
+
+    /**
      * 修改
      */
     @PutMapping("/update")

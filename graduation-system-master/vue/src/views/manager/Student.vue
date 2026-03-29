@@ -39,10 +39,13 @@
         <el-table-column label="班级" prop="classId"></el-table-column>
         <el-table-column label="角色" prop="role"></el-table-column>
 
-        <el-table-column label="操作" align="center" width="160">
+        <el-table-column label="操作" align="center" width="240">
           <template #default="scope">
-            <el-button type="primary" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button type="danger" @click="handleDelete(scope.row.id)">删除</el-button>
+            <div class="action-buttons">
+              <el-button type="primary" @click="handleEdit(scope.row)">编辑</el-button>
+              <el-button type="warning" @click="handleResetPassword(scope.row.id)">重置密码</el-button>
+              <el-button type="danger" @click="handleDelete(scope.row.id)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -227,6 +230,20 @@ const handleDelete = (id) => {
       .catch(() => {});
 };
 
+const handleResetPassword = (id) => {
+  ElMessageBox.confirm("确定要重置该学生的密码为 123456 吗？", "确认重置密码", { type: "warning" })
+      .then(() => {
+        request.put("/student/resetPassword/" + id).then((res) => {
+          if (res.code === "200") {
+            ElMessage.success("密码已重置为 123456");
+          } else {
+            ElMessage.error(res.msg);
+          }
+        });
+      })
+      .catch(() => {});
+};
+
 const load = () => {
   request
       .get("/student/selectPage", {
@@ -349,6 +366,13 @@ load();
   background-color: #fff;
   height: 100vh;
   width: 100%;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 
 .avatar-placeholder {

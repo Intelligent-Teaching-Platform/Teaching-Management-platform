@@ -14,6 +14,9 @@ public interface StudentMapper {
     @Select("select * from student where username=#{username}")
     Student selectByUsername(String username);
 
+    /** 登录专用：如果数据库 role 为 NULL，自动降级为 STUDENT */
+    Student selectByUsernameForLogin(String username);
+
 
     @Select("select student.*, college.name as collegeName from student " +
             "left join college on student.college_id = college.id")
@@ -43,5 +46,11 @@ public interface StudentMapper {
 
     @Select("select * from student")
     List<Student> FindAll();
+
+    @Select("select count(*) from student where class_id = #{classId}")
+    int countByClassId(Integer classId);
+
+    @Select("select count(*) from student where speciality_id = #{specialityId}")
+    int countBySpecialityId(Integer specialityId);
 }
 

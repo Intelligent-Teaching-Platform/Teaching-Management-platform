@@ -2,6 +2,7 @@ package com.example.service;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjectUtil;
+
 import cn.hutool.json.JSONUtil;
 import com.example.entity.*;
 import com.example.exception.CustomException;
@@ -77,13 +78,13 @@ public class ScoreService {
         score.setStudentId(testPaper.getStudentId());
         score.setAnswer(JSONUtil.toJsonStr(list));
 
-        // 按客观题正确率计算总分：满分 100，保留一位小数
-        double total;
+        // 按客观题正确率计算总分：满分 100，四舍五入取整
+        int total;
         if (objectiveTotalCount <= 0) {
-            total = 0d;
+            total = 0;
         } else {
             double raw = 100d * objectiveCorrectCount / objectiveTotalCount;
-            total = BigDecimal.valueOf(raw).setScale(1, RoundingMode.HALF_UP).doubleValue();
+            total = BigDecimal.valueOf(raw).setScale(0, RoundingMode.HALF_UP).intValue();
         }
         score.setScore(total);
 
@@ -93,7 +94,7 @@ public class ScoreService {
 
     public void updateById(Score score) {
         List<Answer> answerData = score.getAnswerData();
-        double total = 0d;
+        int total = 0;
         for (Answer answer : answerData) {
             if (ObjectUtil.isNotEmpty(answer.getResult())) {
                 total += answer.getResult();

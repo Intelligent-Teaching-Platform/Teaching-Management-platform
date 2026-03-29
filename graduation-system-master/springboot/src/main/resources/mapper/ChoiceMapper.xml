@@ -5,9 +5,9 @@
 <mapper namespace="com.example.mapper.ChoiceMapper">
 
 
-    <insert id="insert" parameterType="com.example.entity.Choice" useGeneratedKeys="true">
-        insert into choice(id,name, teacher_id, student_id, course_id)
-        values (#{id}, #{name}, #{teacherId}, #{studentId}, #{courseId})
+    <insert id="insert" parameterType="com.example.entity.Choice" useGeneratedKeys="true" keyProperty="id">
+        insert into choice(name, teacher_id, student_id, course_id)
+        values (#{name}, #{teacherId}, #{studentId}, #{courseId})
     </insert>
 
     <update id="updateById" parameterType="com.example.entity.Choice">

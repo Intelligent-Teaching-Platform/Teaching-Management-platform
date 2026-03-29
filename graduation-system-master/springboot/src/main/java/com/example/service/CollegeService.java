@@ -3,7 +3,10 @@ package com.example.service;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.example.entity.College;
+import com.example.entity.Speciality;
 import com.example.mapper.CollegeMapper;
+import com.example.mapper.SpecialityMapper;
+import com.example.mapper.StudentMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import jakarta.annotation.Resource;
@@ -21,6 +24,12 @@ public class CollegeService {
     @Resource
     private CollegeMapper collegeMapper;
 
+    @Resource
+    private SpecialityMapper specialityMapper;
+
+    @Resource
+    private StudentMapper studentMapper;
+
     public void add(College college) {
         collegeMapper.insert(college);
     }
@@ -34,6 +43,17 @@ public class CollegeService {
         else{
         list =collegeMapper.selectAll();
         }
+        // 填充每个学院的专业列表
+        for (College c : list) {
+            List<Speciality> specialityList = specialityMapper.selectByCollegeId(c.getId());
+            // 填充每个专业的学生人数
+            for (Speciality s : specialityList) {
+                if (s.getStudentNum() == null) {
+                    s.setStudentNum(0);
+                }
+            }
+            c.setSpecialityList(specialityList);
+        }
         return PageInfo.of(list);
     }
 
@@ -42,6 +62,8 @@ public class CollegeService {
     }
 
     public void deleteById(Integer id) {
+        // 删除学院前，先删除该学院下的专业
+        specialityMapper.deleteByCollegeId(id);
         collegeMapper.deleteById(id);
     }
 

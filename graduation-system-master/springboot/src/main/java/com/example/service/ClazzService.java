@@ -3,6 +3,7 @@ package com.example.service;
 import cn.hutool.core.util.ObjectUtil;
 import com.example.entity.Clazz;
 import com.example.mapper.ClazzMapper;
+import com.example.mapper.StudentMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import jakarta.annotation.Resource;
@@ -20,6 +21,9 @@ public class ClazzService {
     @Resource
     private ClazzMapper clazzMapper;
 
+    @Resource
+    private StudentMapper studentMapper;
+
     public void add(Clazz clazz) {
         clazzMapper.insert(clazz);
     }
@@ -32,6 +36,11 @@ public class ClazzService {
         }
         else{
         list =clazzMapper.selectAll();
+        }
+        // 填充每个班级的学生人数
+        for (Clazz c : list) {
+            int count = studentMapper.countByClassId(c.getId());
+            c.setStudentNum(count);
         }
         return PageInfo.of(list);
     }

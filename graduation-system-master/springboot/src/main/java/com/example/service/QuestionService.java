@@ -29,6 +29,15 @@ public class QuestionService {
         questionMapper.insert(question);
     }
 
+    public int addBatch(List<Question> questions) {
+        int count = 0;
+        for (Question question : questions) {
+            questionMapper.insert(question);
+            count++;
+        }
+        return count;
+    }
+
     public void updateById(Question question) {
         questionMapper.updateById(question);
     }

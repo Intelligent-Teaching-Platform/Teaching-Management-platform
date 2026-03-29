@@ -1,13 +1,14 @@
 package com.example.entity;
 
+import java.util.List;
+
 public class College {
     private Integer id;
     private String name;
     private String content;
     private Integer score;
     private Integer num;
-
-
+    private List<Speciality> specialityList;
 
     public Integer getId() {
         return id;
@@ -47,5 +48,13 @@ public class College {
 
     public void setScore(Integer score) {
         this.score = score;
+    }
+
+    public List<Speciality> getSpecialityList() {
+        return specialityList;
+    }
+
+    public void setSpecialityList(List<Speciality> specialityList) {
+        this.specialityList = specialityList;
     }
 }
