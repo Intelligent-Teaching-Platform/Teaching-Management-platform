@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -94,13 +95,15 @@ public class CourseService {
                 list = courseMapper.selectAllByTeacherId(teacherId);
             }
         } else if (ObjectUtil.isNotEmpty(course.getStudentId())) {
-            // 学生登录，只查已选课程（选课表 choice）
+            // 学生：已选课（choice）+ 绑定其所在班级的课程（course.class_id），避免仅有班级课但无选课记录时列表为空
             Integer studentId = course.getStudentId();
-            if (ObjectUtil.isNotEmpty(course.getName())) {
-                list = courseMapper.selectByNameAndStudentId(course.getName(), studentId);
-            } else {
-                list = courseMapper.selectAllByStudentId(studentId);
+            Student stu = studentMapper.selectById(studentId);
+            Integer classId = null;
+            if (stu != null && stu.getClassId() > 0) {
+                classId = stu.getClassId();
             }
+            String nameFilter = ObjectUtil.isNotEmpty(course.getName()) ? course.getName() : null;
+            list = courseMapper.selectForStudent(studentId, classId, nameFilter);
         } else {
             // 管理员，查全部课程
             if (ObjectUtil.isNotEmpty(course.getName())) {
@@ -116,8 +119,68 @@ public class CourseService {
     /**
      * 更新课程信息
      */
+    @Transactional
     public void updateByID(Course course) {
         courseMapper.updateById(course);
+        Course fresh = courseMapper.selectById(course.getId());
+        if (fresh != null && fresh.getClassId() != null && fresh.getClassId() > 0) {
+            backfillChoicesForSingleCourse(fresh);
+            refreshCourseAlreadyNum(fresh.getId());
+        }
+    }
+
+    /**
+     * 为单门「已绑定班级」的课程补全班级内学生选课记录（仅插入尚不存在的 choice）
+     */
+    private int backfillChoicesForSingleCourse(Course course) {
+        if (course == null || course.getId() == null || course.getClassId() == null || course.getClassId() <= 0) {
+            return 0;
+        }
+        int inserted = 0;
+        List<Student> students = studentMapper.selectByClassId(course.getClassId());
+        for (Student student : students) {
+            List<Choice> existing = choiceMapper.selectByCourseIdAndStudentId(course.getId(), student.getId());
+            if (existing != null && !existing.isEmpty()) {
+                continue;
+            }
+            Choice choice = new Choice();
+            choice.setCourseId(course.getId());
+            choice.setStudentId(student.getId());
+            choice.setName(course.getName());
+            choice.setTeacherId(course.getTeacherId());
+            choiceMapper.insert(choice);
+            inserted++;
+        }
+        return inserted;
+    }
+
+    private void refreshCourseAlreadyNum(Integer courseId) {
+        Course db = courseMapper.selectById(courseId);
+        if (db == null) {
+            return;
+        }
+        db.setAlreadyNum(choiceMapper.countByCourseId(courseId));
+        courseMapper.updateById(db);
+    }
+
+    /**
+     * 全量补全：所有带班级的课程 ↔ 该班学生选课记录，并校正已选人数
+     */
+    @Transactional
+    public Map<String, Object> backfillAllChoicesByClass() {
+        int inserted = 0;
+        List<Course> all = courseMapper.selectAll();
+        for (Course course : all) {
+            if (course.getClassId() == null || course.getClassId() <= 0) {
+                continue;
+            }
+            inserted += backfillChoicesForSingleCourse(course);
+            refreshCourseAlreadyNum(course.getId());
+        }
+        Map<String, Object> ret = new HashMap<>(4);
+        ret.put("insertedChoices", inserted);
+        ret.put("message", "已为绑定班级的课程补全选课记录，并同步已选人数");
+        return ret;
     }
 
     /**

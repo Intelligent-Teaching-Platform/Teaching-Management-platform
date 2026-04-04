@@ -5,6 +5,8 @@ public class Speciality {
     private String name;
     private Integer collegeId;
     private String collegeName;
+    /** 专业介绍（可选，需执行库表迁移添加 content 列） */
+    private String content;
 
     public Integer getId() {
         return id;
@@ -36,5 +38,13 @@ public class Speciality {
 
     public void setCollegeName(String collegeName) {
         this.collegeName = collegeName;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
     }
 }

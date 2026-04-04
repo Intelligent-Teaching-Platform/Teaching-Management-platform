@@ -9,7 +9,7 @@ public class Score {
     private Integer teacherId;
     private Integer studentId;
     private Integer paperId;
-    private Integer score;
+    private Double score;
     private String status;
     private String answer;
 
@@ -93,11 +93,11 @@ public class Score {
         this.paperId = paperId;
     }
 
-    public Integer getScore() {
+    public Double getScore() {
         return score;
     }
 
-    public void setScore(Integer score) {
+    public void setScore(Double score) {
         this.score = score;
     }
 

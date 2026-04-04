@@ -69,6 +69,9 @@ public class StudentService {
         if (!account.getPassword().equals(dbStudent.getPassword())) {
             throw new CustomException("账号或密码错误", "题型名称不能重复");
         }
+        if (ObjectUtil.isEmpty(dbStudent.getRole())) {
+            dbStudent.setRole("STUDENT");
+        }
         return dbStudent;
     }
 

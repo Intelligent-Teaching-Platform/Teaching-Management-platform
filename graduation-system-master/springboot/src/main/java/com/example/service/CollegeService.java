@@ -50,6 +50,13 @@ public class CollegeService {
         return collegeMapper.selectAll();
     }
 
+    public College selectById(Integer id) {
+        if (ObjectUtil.isEmpty(id)) {
+            return null;
+        }
+        return collegeMapper.selectById(id);
+    }
+
     public Map<String, Integer> getNameIdMap() {
         List<College> collegeList = collegeMapper.selectAll();
         return collegeList.stream()

@@ -63,6 +63,9 @@ public interface ChoiceMapper {
 
     void batchInsert(List<Choice> choices);
 
+    @Select("SELECT COUNT(*) FROM choice WHERE course_id = #{courseId}")
+    int countByCourseId(@Param("courseId") Integer courseId);
+
     @Select("SELECT COUNT(*) FROM choice WHERE student_id = #{studentId} AND course_id = #{courseId}")
     boolean existsRelation(@Param("studentId") Integer studentId,
                        @Param("courseId") Integer courseId);

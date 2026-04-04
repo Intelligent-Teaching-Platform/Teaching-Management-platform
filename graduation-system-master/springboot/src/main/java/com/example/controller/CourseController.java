@@ -85,7 +85,11 @@ public class CourseController {
     @GetMapping("/selectPage")
     public Result selectPage(Course course,
                              @RequestParam(defaultValue = "1") Integer pageNum,
-                             @RequestParam(defaultValue = "5") Integer pageSize) {
+                             @RequestParam(defaultValue = "5") Integer pageSize,
+                             @RequestParam(required = false) Integer studentId) {
+        if (studentId != null) {
+            course.setStudentId(studentId);
+        }
         PageInfo<Course> pageInfo = courseService.selectPage(course, pageNum, pageSize);
         return Result.success(pageInfo);
     }
@@ -94,6 +98,14 @@ public class CourseController {
     public Result deleteById(@PathVariable Integer id) {
         courseService.deleteById(id);
         return Result.success();
+    }
+
+    /**
+     * 补全历史数据：课程已选班级但未写入 choice 的学生，批量插入选课并刷新 already_num
+     */
+    @PostMapping("/backfillClassChoices")
+    public Result backfillClassChoices() {
+        return Result.success(courseService.backfillAllChoicesByClass());
     }
 
     /**

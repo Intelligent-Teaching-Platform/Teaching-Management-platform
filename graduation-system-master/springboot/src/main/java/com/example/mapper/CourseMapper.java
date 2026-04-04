@@ -88,4 +88,23 @@ public interface CourseMapper {
             "LEFT JOIN clazz clz ON c.class_id = clz.id " +
             "WHERE ch.student_id = #{studentId} AND c.name LIKE CONCAT('%', #{name}, '%')")
     List<Course> selectByNameAndStudentId(@Param("name") String name, @Param("studentId") Integer studentId);
+
+    /**
+     * 学生「我学的课」：已选课（choice）或 面向本班的课程（course.class_id = 学生班级），去重
+     */
+    @Select("<script>" +
+            "SELECT DISTINCT c.*, t.name as teacherName, col.name as collegeName, clz.name as className " +
+            "FROM course c " +
+            "LEFT JOIN teacher t ON c.teacher_id = t.id " +
+            "LEFT JOIN college col ON c.college_id = col.id " +
+            "LEFT JOIN clazz clz ON c.class_id = clz.id " +
+            "WHERE ( " +
+            "EXISTS (SELECT 1 FROM choice ch WHERE ch.course_id = c.id AND ch.student_id = #{studentId}) " +
+            "<if test='classId != null'> OR c.class_id = #{classId} </if>" +
+            ") " +
+            "<if test=\"name != null and name != ''\"> AND c.name LIKE CONCAT('%', #{name}, '%') </if>" +
+            "</script>")
+    List<Course> selectForStudent(@Param("studentId") Integer studentId,
+                                  @Param("classId") Integer classId,
+                                  @Param("name") String name);
 }

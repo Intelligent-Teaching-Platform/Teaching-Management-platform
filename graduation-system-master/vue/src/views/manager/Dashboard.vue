@@ -1,29 +1,37 @@
 <template>
-  <div class="cockpit">
-    <div class="cockpit-viewport">
-      <div class="screen-bg" />
-      <div class="cockpit-stage" :class="{ 'is-scaled': enableScale }" >
-    <div class="page-header">
-      <div>
-        <div class="page-title">统计驾驶舱</div>
-        <div class="page-subtitle" v-if="role === 'ADMIN'">管理员总览</div>
-        <div class="page-subtitle" v-else-if="role === 'TEACHER'">教师看板</div>
-        <div class="page-subtitle" v-else>当前角色暂无统计看板</div>
-      </div>
-
-      <div class="header-actions" v-if="role === 'TEACHER'">
-        <el-select v-model="teacherCourseId" size="small" class="dark-select" placeholder="选择课程">
-          <el-option v-for="c in teacherCourses" :key="c.id" :label="c.name" :value="c.id" />
-        </el-select>
-      </div>
-    </div>
+  <div class="dashboard-page">
+    <div class="dashboard-viewport">
+      <div class="dashboard-stage" :class="{ 'is-scaled': enableScale }">
+        <header class="dashboard-hero card">
+          <div class="dashboard-hero__accent" aria-hidden="true" />
+          <div class="dashboard-hero__icon" aria-hidden="true">
+            <el-icon><DataBoard /></el-icon>
+          </div>
+          <div class="dashboard-hero__text">
+            <h1 class="dashboard-hero__title">统计驾驶舱</h1>
+            <p v-if="role === 'ADMIN'" class="dashboard-hero__sub">管理员总览 · 关键指标与趋势一目掌握</p>
+            <p v-else-if="role === 'TEACHER'" class="dashboard-hero__sub">教师看板 · 按课程查看班级与任务数据</p>
+            <p v-else-if="role === 'STUDENT'" class="dashboard-hero__sub">学习看板</p>
+            <p v-else class="dashboard-hero__sub">当前角色暂无统计看板</p>
+          </div>
+          <div v-if="role === 'TEACHER'" class="dashboard-hero__actions">
+            <el-select
+              v-model="teacherCourseId"
+              size="small"
+              class="dashboard-course-select"
+              placeholder="选择课程"
+            >
+              <el-option v-for="c in teacherCourses" :key="c.id" :label="c.name" :value="c.id" />
+            </el-select>
+          </div>
+        </header>
 
     <template v-if="role === 'ADMIN'">
-      <div class="nine-grid">
-        <!-- 第一行 -->
-        <el-card class="grid-block cockpit-card" shadow="never">
+      <div class="nine-grid nine-grid--admin">
+        <!-- 第一行：KPI 收窄；两侧图表等宽，避免「数字卡与图」抢同宽 -->
+        <el-card class="grid-block dash-card" shadow="never">
           <template #header><div class="card-header">数据概览</div></template>
-          <div class="kpi-grid">
+          <div class="kpi-grid kpi-grid--quad">
             <div class="kpi-item">
               <div class="kpi-label">课程总数</div>
               <div class="kpi-value">{{ main.kpi.courseCount ?? '-' }}</div>
@@ -43,18 +51,18 @@
           </div>
         </el-card>
 
-        <el-card class="grid-block cockpit-card" shadow="never">
+        <el-card class="grid-block dash-card dash-chart-card" shadow="never">
           <template #header><div class="card-header">作业状态分布</div></template>
-          <div ref="mainLeft2Ref" class="chart" />
+          <div ref="mainLeft2Ref" class="chart chart-panel" />
         </el-card>
 
-        <el-card class="grid-block cockpit-card" shadow="never">
+        <el-card class="grid-block dash-card dash-chart-card" shadow="never">
           <template #header><div class="card-header">课程数量趋势（按学期/时间）</div></template>
-          <div ref="mainMid1Ref" class="chart" />
+          <div ref="mainMid1Ref" class="chart chart-panel" />
         </el-card>
 
         <!-- 第二行 -->
-        <el-card class="grid-block cockpit-card" shadow="never">
+        <el-card class="grid-block dash-card" shadow="never">
           <template #header><div class="card-header">学生作业完成率 Top10</div></template>
           <div class="progress-list">
             <div v-for="s in main.left3" :key="s.studentId" class="progress-item">
@@ -70,7 +78,7 @@
           </div>
         </el-card>
 
-        <el-card class="grid-block cockpit-card" shadow="never">
+        <el-card class="grid-block dash-card" shadow="never">
           <template #header><div class="card-header">课程概览（最近）</div></template>
           <el-table :data="main.mid2" size="small" class="dark-table" style="width: 100%">
             <el-table-column prop="courseName" label="课程" min-width="140" />
@@ -81,18 +89,18 @@
           </el-table>
         </el-card>
 
-        <el-card class="grid-block cockpit-card" shadow="never">
+        <el-card class="grid-block dash-card dash-chart-card" shadow="never">
           <template #header><div class="card-header">教师职称分布</div></template>
-          <div ref="mainRight1Ref" class="chart" />
+          <div ref="mainRight1Ref" class="chart chart-panel chart-panel--pie" />
         </el-card>
 
         <!-- 第三行 -->
-        <el-card class="grid-block cockpit-card bottom-block" shadow="never">
+        <el-card class="grid-block dash-card bottom-block" shadow="never">
           <template #header><div class="card-header">学生综合得分分析（雷达）</div></template>
           <div ref="mainMid3Ref" class="chart" />
         </el-card>
 
-        <el-card class="grid-block cockpit-card bottom-block" shadow="never">
+        <el-card class="grid-block dash-card bottom-block" shadow="never">
           <template #header><div class="card-header">低完成率预警</div></template>
           <div class="warn-box">
             <div class="warn-line">阈值：{{ main.right2.threshold }}%</div>
@@ -100,7 +108,7 @@
           </div>
         </el-card>
 
-        <el-card class="grid-block cockpit-card bottom-block" shadow="never">
+        <el-card class="grid-block dash-card bottom-block" shadow="never">
           <template #header><div class="card-header">近期作业记录</div></template>
           <el-table :data="main.right3" size="small" class="dark-table" style="width: 100%">
             <el-table-column prop="studentName" label="学生" width="90" />
@@ -114,9 +122,9 @@
     <template v-else-if="role === 'TEACHER'">
       <div class="nine-grid">
         <!-- 第一行 -->
-        <el-card class="grid-block cockpit-card" shadow="never">
+        <el-card class="grid-block dash-card" shadow="never">
           <template #header><div class="card-header">数据概览</div></template>
-          <div class="kpi-grid">
+          <div class="kpi-grid kpi-grid--triple">
             <div class="kpi-item">
               <div class="kpi-label">授课课程数</div>
               <div class="kpi-value">{{ screen.kpi.courseCount ?? '-' }}</div>
@@ -132,12 +140,12 @@
           </div>
         </el-card>
 
-        <el-card class="grid-block cockpit-card" shadow="never">
+        <el-card class="grid-block dash-card" shadow="never">
           <template #header><div class="card-header">作业状态分布</div></template>
           <div ref="screenLeft2Ref" class="chart" />
         </el-card>
 
-        <el-card class="grid-block cockpit-card" shadow="never">
+        <el-card class="grid-block dash-card" shadow="never">
           <template #header><div class="card-header">课程上课时间地点（本教师）</div></template>
           <div class="course-time-location-cards">
             <div
@@ -161,7 +169,7 @@
         </el-card>
 
         <!-- 第二行 -->
-        <el-card class="grid-block cockpit-card" shadow="never">
+        <el-card class="grid-block dash-card" shadow="never">
           <template #header><div class="card-header">学生作业完成率 Top10</div></template>
           <div class="progress-list">
             <div v-for="s in screen.left3" :key="s.studentId" class="progress-item">
@@ -177,7 +185,7 @@
           </div>
         </el-card>
 
-        <el-card class="grid-block cockpit-card" shadow="never">
+        <el-card class="grid-block dash-card" shadow="never">
           <template #header><div class="card-header">课程概览</div></template>
           <el-table :data="screen.mid2" size="small" class="dark-table" style="width: 100%">
             <el-table-column prop="courseName" label="课程" min-width="140" />
@@ -187,7 +195,7 @@
           </el-table>
         </el-card>
 
-        <el-card class="grid-block cockpit-card" shadow="never">
+        <el-card class="grid-block dash-card" shadow="never">
           <template #header><div class="card-header">签到情况（饼图）</div></template>
 
           <div class="signin-pie-wrap">
@@ -204,7 +212,7 @@
                     :key="n"
                     type="success"
                     size="small"
-                    effect="dark"
+                    effect="light"
                     class="signin-tag"
                   >
                     {{ n }}
@@ -223,7 +231,7 @@
                     :key="n"
                     type="info"
                     size="small"
-                    effect="dark"
+                    effect="light"
                     class="signin-tag"
                   >
                     {{ n }}
@@ -236,12 +244,12 @@
         </el-card>
 
         <!-- 第三行 -->
-        <el-card class="grid-block cockpit-card bottom-block" shadow="never">
+        <el-card class="grid-block dash-card bottom-block" shadow="never">
           <template #header><div class="card-header">学生综合得分分析（雷达）</div></template>
           <div ref="screenMid3Ref" class="chart" />
         </el-card>
 
-        <el-card class="grid-block cockpit-card bottom-block" shadow="never">
+        <el-card class="grid-block dash-card bottom-block" shadow="never">
           <template #header><div class="card-header">实验作业相似度预警</div></template>
           <div class="similarity-alert">
             <div class="similarity-header">
@@ -279,15 +287,22 @@
           </div>
         </el-card>
 
-        <el-card class="grid-block cockpit-card bottom-block" shadow="never">
+        <el-card class="grid-block dash-card bottom-block" shadow="never">
           <template #header><div class="card-header">实验任务阶段人数</div></template>
           <div ref="screenRight3Ref" class="chart" />
         </el-card>
       </div>
     </template>
 
+    <template v-else-if="role === 'STUDENT'">
+      <div class="dashboard-empty">
+        <el-empty description="学生个人学习统计暂未接入，请使用左侧「我学的课」「课程列表」查看课程与选课。" />
+      </div>
+    </template>
     <template v-else>
-      <el-empty description="当前角色暂无统计页面" />
+      <div class="dashboard-empty">
+        <el-empty description="当前角色暂无统计页面" />
+      </div>
     </template>
       </div>
     </div>
@@ -297,6 +312,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, nextTick, reactive, ref, watch } from 'vue'
 import * as echarts from 'echarts'
+import { DataBoard } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import {
   mainLeft1,
@@ -320,7 +336,9 @@ import {
 } from '@/api/dashboard'
 
 const user = JSON.parse(localStorage.getItem('system-user') || '{}')
-const role = user?.role
+const role = user?.role != null && String(user.role).trim() !== ''
+  ? String(user.role).trim().toUpperCase()
+  : ''
 
 // cockpit scaling（双向适应：宽高同时约束等比缩放；小屏走响应式不缩放）
 const DESIGN_W = 1920
@@ -585,17 +603,19 @@ const safeSet = (chart, option) => {
   chart.setOption(option, true)
 }
 
-const cockpitPalette = ['#2DE2E6', '#1B74FF', '#A742FF', '#FFB74A', '#2AD37D', '#FF4D7D']
-const axisLine = { lineStyle: { color: 'rgba(124, 199, 255, 0.25)' } }
-const axisLabel = { color: 'rgba(215, 240, 255, 0.78)', fontSize: 11 }
-const splitLine = { lineStyle: { color: 'rgba(124, 199, 255, 0.10)' } }
+/** 与全局主色（teal）协调的图表色组，避免高饱和紫/粉 */
+const dashPalette = ['#0d9488', '#14b8a6', '#0e7490', '#f59e0b', '#0891b2', '#059669']
+const chartTitleStyle = { color: '#64748b', fontSize: 12, fontWeight: 600 }
+const axisLine = { lineStyle: { color: 'rgba(15, 23, 42, 0.12)' } }
+const axisLabel = { color: '#64748b', fontSize: 11 }
+const splitLine = { lineStyle: { color: 'rgba(15, 23, 42, 0.06)' } }
 
 const renderBar = (chart, list, title) => {
   const x = list.map(i => i.name)
   const y = list.map(i => Number(i.value || 0))
   safeSet(chart, {
-    color: cockpitPalette,
-    title: { text: title, left: 'center', textStyle: { fontSize: 12 } },
+    color: dashPalette,
+    title: { text: title, left: 'center', textStyle: chartTitleStyle },
     tooltip: { trigger: 'axis' },
     grid: { left: 24, right: 18, top: 40, bottom: 30, containLabel: true },
     xAxis: { type: 'category', data: x, axisLabel: { ...axisLabel, rotate: 30 }, axisLine, axisTick: { show: false } },
@@ -607,8 +627,8 @@ const renderBar = (chart, list, title) => {
         barMaxWidth: 28,
         itemStyle: {
           borderRadius: [6, 6, 0, 0],
-          shadowBlur: 12,
-          shadowColor: 'rgba(45, 226, 230, 0.18)',
+          shadowBlur: 8,
+          shadowColor: 'rgba(13, 148, 136, 0.18)',
         },
       },
     ],
@@ -623,10 +643,10 @@ const renderWorkStatusSplitBar = (chart, list, title) => {
   const submitted = safeList.map(i => Number(i.submitted || 0))
 
   safeSet(chart, {
-    color: [cockpitPalette[3], cockpitPalette[4]],
-    title: title ? { text: title, left: 'center', textStyle: { fontSize: 12 } } : { show: false },
+    color: ['#f59e0b', '#0d9488'],
+    title: title ? { text: title, left: 'center', textStyle: chartTitleStyle } : { show: false },
     tooltip: { trigger: 'axis' },
-    legend: { top: 10, textStyle: axisLabel },
+    legend: { top: 10, textStyle: { ...axisLabel } },
     // 让柱状图在卡片内更“铺满”，并尽量居中（右侧留白再减小一点）
     grid: { left: 12, right: 6, top: 32, bottom: 32, containLabel: true },
     xAxis: { type: 'category', data: x, axisLabel, axisLine, axisTick: { show: false } },
@@ -641,8 +661,8 @@ const renderWorkStatusSplitBar = (chart, list, title) => {
         barGap: '15%',
         itemStyle: {
           borderRadius: [6, 6, 0, 0],
-          shadowBlur: 12,
-          shadowColor: 'rgba(255, 183, 74, 0.18)',
+          shadowBlur: 8,
+          shadowColor: 'rgba(245, 158, 11, 0.2)',
         },
       },
       {
@@ -654,8 +674,8 @@ const renderWorkStatusSplitBar = (chart, list, title) => {
         barGap: '15%',
         itemStyle: {
           borderRadius: [6, 6, 0, 0],
-          shadowBlur: 12,
-          shadowColor: 'rgba(42, 211, 125, 0.18)',
+          shadowBlur: 8,
+          shadowColor: 'rgba(13, 148, 136, 0.2)',
         },
       },
     ],
@@ -666,8 +686,8 @@ const renderLine = (chart, list, title) => {
   const x = list.map(i => i.label)
   const y = list.map(i => Number(i.value || 0))
   safeSet(chart, {
-    color: cockpitPalette,
-    title: { text: title, left: 'center', textStyle: { fontSize: 12 } },
+    color: dashPalette,
+    title: { text: title, left: 'center', textStyle: chartTitleStyle },
     tooltip: { trigger: 'axis' },
     grid: { left: 24, right: 18, top: 40, bottom: 30, containLabel: true },
     xAxis: { type: 'category', data: x, axisLabel, axisLine, axisTick: { show: false } },
@@ -680,7 +700,7 @@ const renderLine = (chart, list, title) => {
         symbol: 'circle',
         symbolSize: 6,
         lineStyle: { width: 2 },
-        areaStyle: { opacity: 0.10 },
+        areaStyle: { color: 'rgba(13, 148, 136, 0.12)' },
       },
     ],
   })
@@ -688,8 +708,8 @@ const renderLine = (chart, list, title) => {
 
 const renderPie = (chart, list, title) => {
   safeSet(chart, {
-    color: cockpitPalette,
-    title: { text: title, left: 'center', textStyle: { fontSize: 12 } },
+    color: dashPalette,
+    title: { text: title, left: 'center', textStyle: chartTitleStyle },
     tooltip: { trigger: 'item' },
     series: [
       {
@@ -714,18 +734,18 @@ const renderRadar = (chart, data, title) => {
     value: s.values || [],
   }))
   safeSet(chart, {
-    color: cockpitPalette,
-    title: { text: title, left: 'center', textStyle: { fontSize: 12 } },
+    color: dashPalette,
+    title: { text: title, left: 'center', textStyle: chartTitleStyle },
     tooltip: {},
-    legend: { bottom: 8, type: 'scroll', textStyle: axisLabel },
+    legend: { bottom: 8, type: 'scroll', textStyle: { ...axisLabel } },
     radar: {
       indicator: indicators,
       radius: '65%',
       center: ['50%', '50%'],
       axisName: axisLabel,
-      splitLine: { lineStyle: { color: 'rgba(124, 199, 255, 0.14)' } },
-      splitArea: { areaStyle: { color: ['rgba(10, 24, 44, 0.20)', 'rgba(10, 24, 44, 0.35)'] } },
-      axisLine: { lineStyle: { color: 'rgba(124, 199, 255, 0.20)' } },
+      splitLine: { lineStyle: { color: 'rgba(15, 23, 42, 0.08)' } },
+      splitArea: { areaStyle: { color: ['rgba(13, 148, 136, 0.06)', 'rgba(15, 23, 42, 0.03)'] } },
+      axisLine: { lineStyle: { color: 'rgba(15, 23, 42, 0.1)' } },
     },
     series: [{ type: 'radar', data: series }],
   })
@@ -941,6 +961,8 @@ onMounted(async () => {
     await loadTeacherCourses()
     await loadTeacher()
   }
+  await nextTick()
+  resizeAllCharts()
 })
 
 onBeforeUnmount(() => {
@@ -950,42 +972,40 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-:deep(.el-card) {
-  --el-card-bg-color: transparent;
-  --el-fill-color-blank: transparent;
+.dash-card :deep(.el-card) {
+  --el-card-bg-color: var(--color-bg-elevated);
+  --el-fill-color-blank: var(--color-bg-elevated);
 }
 
 :deep(.el-progress__text) {
-  color: rgba(12, 119, 185, 0.989) !important;
+  color: var(--color-primary-hover) !important;
 }
 
 :deep(.el-progress-bar__outer) {
-  background: rgba(124, 199, 255, 0.12);
+  background: var(--color-primary-soft);
 }
 
 :deep(.el-progress-bar__inner) {
-  background: linear-gradient(90deg, rgba(45, 226, 230, 1), rgba(27, 116, 255, 1));
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
 }
 
 :deep(.el-table) {
-  --el-bg-color: rgb(38 166 177 / 19%);
-  --el-table-border-color: rgba(124, 199, 255, 0.18);
-  --el-table-header-bg-color: rgba(9, 24, 48, 0.65);
-  --el-table-row-hover-bg-color: rgba(45, 226, 230, 0.08);
-  --el-table-bg-color: rgba(8, 18, 36, 0.35);
-  color: rgba(22, 132, 199, 0.854);
+  --el-table-border-color: var(--color-border);
+  --el-table-header-bg-color: rgba(13, 148, 136, 0.06);
+  --el-table-row-hover-bg-color: var(--color-primary-soft);
+  --el-table-bg-color: var(--color-bg-elevated);
+  color: var(--color-text);
 }
 
 :deep(.el-table th.el-table__cell) {
-  color: rgba(13, 204, 229, 0.968);
-  font-weight: 800;
+  color: var(--color-text);
+  font-weight: 600;
 }
 
 :deep(.el-table td.el-table__cell) {
-  border-bottom: 1px solid rgba(124, 199, 255, 0.12);
+  border-bottom: 1px solid var(--color-border);
 }
 
-/* 深色表格：去掉白色底色，统一成柔和深蓝 */
 .dark-table :deep(th.el-table__cell),
 .dark-table :deep(td.el-table__cell) {
   background-color: transparent !important;
@@ -997,102 +1017,151 @@ onBeforeUnmount(() => {
   background-color: transparent !important;
 }
 
-.cockpit {
+/* 整页可滚；单卡限制高度，内容在卡片内滚动 */
+.dashboard-page {
+  --dash-row-short: min(292px, 33vh);
+  --dash-row-tall: min(308px, 35vh);
+  --dash-chart-h: 200px;
   width: 100%;
-  min-height: calc(100vh - 60px);
-  background:
-    radial-gradient(900px 500px at 20% 10%, rgba(45, 226, 230, 0.10), transparent 60%),
-    radial-gradient(900px 500px at 80% 25%, rgba(27, 116, 255, 0.12), transparent 62%),
-    radial-gradient(700px 420px at 55% 80%, rgba(167, 66, 255, 0.10), transparent 60%),
-    linear-gradient(180deg, #061227 0%, #040b18 100%);
-  overflow: hidden;
-}
-
-.cockpit-viewport {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  min-height: calc(100vh - 60px);
+  min-width: 0;
   display: flex;
-  /* 让内容区域铺满垂直方向，而不是整体垂直居中 */
-  align-items: stretch;
-  justify-content: center;
-  padding: 12px;
+  flex-direction: column;
+  font-family: var(--font-sans);
+}
+
+.dashboard-viewport {
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
 }
-/* .screen-bg {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(800px 400px at 20% 15%, rgba(64, 158, 255, 0.28), transparent 60%),
-    radial-gradient(900px 500px at 80% 20%, rgba(80, 200, 255, 0.20), transparent 60%),
-    linear-gradient(180deg, rgba(10, 44, 80, 0.85), rgba(2, 10, 24, 0.9));
-  filter: saturate(1.1);
-  pointer-events: none;
-} */
 
-.cockpit-stage {
-  inset: 0;
+.dashboard-stage {
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
-  padding: 16px;
 }
 
-.cockpit-stage.is-scaled {
-  transform-origin: top left;
-  padding: 18px 22px;
+.dashboard-stage.is-scaled {
+  transform-origin: top center;
 }
 
-.page-header {
+.dashboard-hero {
+  position: relative;
   display: flex;
   align-items: flex-start;
-  justify-content: center;
-  padding: 14px 16px;
-  border-radius: 14px;
+  gap: 14px;
+  padding: 18px 20px;
   margin-bottom: 14px;
-  border: 1px solid rgba(124, 199, 255, 0.22);
-  background: linear-gradient(180deg, rgba(9, 24, 48, 0.82) 0%, rgba(6, 18, 39, 0.58) 100%);
-  box-shadow:
-    inset 0 0 0 1px rgba(45, 226, 230, 0.06),
-    0 10px 30px rgba(0, 0, 0, 0.35);
-  position: relative;
+  overflow: hidden;
+  transition:
+    border-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
 }
 
-.header-actions {
+.dashboard-hero:hover {
+  border-color: var(--color-primary-muted);
+  box-shadow:
+    0 16px 48px -20px rgba(15, 23, 42, 0.12),
+    0 0 0 1px var(--color-primary-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-hero {
+    transition: none;
+  }
+}
+
+.dashboard-hero__accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  opacity: 0.95;
+}
+
+.dashboard-hero__icon {
+  flex-shrink: 0;
+  margin-left: 8px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-hover);
+  font-size: 22px;
+  position: relative;
+  z-index: 1;
 }
 
-.page-title {
-  font-size: clamp(18px, 1.2vw, 22px);
-  font-weight: 800;
-  letter-spacing: 0.6px;
-  color: rgba(232, 251, 255, 0.92);
-  line-height: 1.2;
+.dashboard-hero__text {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
 }
 
-.page-subtitle {
-  margin-top: 6px;
-  font-size: 12px;
-  color: rgba(215, 240, 255, 0.68);
+.dashboard-hero__title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  line-height: 1.25;
+}
+
+.dashboard-hero__sub {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  max-width: 60ch;
+}
+
+.dashboard-hero__actions {
+  flex-shrink: 0;
+  align-self: center;
+  position: relative;
+  z-index: 1;
+}
+
+.dashboard-course-select {
+  width: min(320px, 72vw);
 }
 
 .nine-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: 1fr 1fr 1.5fr;
-  gap: 8px;
-  height: calc(100vh - 80px);
-  min-height: 0;
+  /* 三行固定略矮高度，卡片对齐；超出部分在卡片 body 内滚动 */
+  grid-template-rows: var(--dash-row-short) var(--dash-row-short) var(--dash-row-tall);
+  gap: 12px;
+  align-items: stretch;
+  justify-items: stretch;
+  padding-bottom: 20px;
 }
 
+/* 管理员：第一列固定为 KPI 宽度，第二三两列均分给柱状图/折线图/饼图，比例更协调 */
+.nine-grid--admin {
+  grid-template-columns: minmax(248px, 0.92fr) minmax(0, 1.04fr) minmax(0, 1.04fr);
+  grid-template-rows: var(--dash-row-short) var(--dash-row-short) var(--dash-row-tall);
+  gap: 14px;
+}
+
+@media (min-width: 1200px) {
+  .nine-grid--admin {
+    grid-template-columns: minmax(268px, 300px) minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+/* el-card 根节点带 .grid-block：铺满网格单元，便于行内对齐 */
 .grid-block {
   display: flex;
   flex-direction: column;
+  height: 100%;
   min-height: 0;
   overflow: hidden;
 }
@@ -1111,17 +1180,41 @@ onBeforeUnmount(() => {
 
 .nine-grid > .grid-block.bottom-block {
   grid-row: 3;
-  height: 100%;
 }
 
 .kpi-grid {
   display: grid;
+  gap: 10px;
+  padding: 2px 0 4px;
+  flex: 1;
+  min-height: 0;
+  align-content: stretch;
+}
+
+.kpi-grid--quad {
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(2, 1fr);
-  gap: 8px;
-  height: 100%;
-  padding: 4px 0;
+}
+
+.kpi-grid--quad .kpi-item {
+  justify-content: center;
   min-height: 0;
+}
+
+.kpi-grid--triple {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: 1fr;
+}
+
+.kpi-grid--triple .kpi-item {
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .kpi-grid--triple {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
 }
 
 .kpi-item {
@@ -1129,30 +1222,53 @@ onBeforeUnmount(() => {
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  padding: 10px;
-  border-radius: 8px;
-  background: rgba(9, 24, 48, 0.4);
-  border: 1px solid rgba(124, 199, 255, 0.15);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-soft);
+  border: 1px solid var(--color-border);
+  transition:
+    border-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out),
+    transform var(--duration) var(--ease-out);
+}
+
+.kpi-item:hover {
+  border-color: var(--color-primary-muted);
+  box-shadow: var(--shadow-soft);
+}
+
+.kpi-item:active {
+  transform: scale(0.99);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kpi-item,
+  .kpi-item:hover,
+  .kpi-item:active {
+    transition: none;
+    transform: none;
+  }
 }
 
 .kpi-label {
   font-size: 12px;
-  color: rgba(215, 240, 255, 0.70);
+  font-weight: 600;
+  color: var(--color-text-muted);
   margin-bottom: 8px;
 }
 
 .kpi-value {
-  font-size: clamp(24px, 1.8vw, 32px);
-  font-weight: 900;
-  color: rgba(45, 226, 230, 0.95);
-  text-shadow: 0 0 22px rgba(45, 226, 230, 0.20);
-  letter-spacing: 0.5px;
+  font-size: clamp(20px, 1.45vw, 26px);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary-hover);
+  letter-spacing: -0.02em;
 }
 
 .card-header {
-  font-weight: 600;
-  color: rgba(232, 251, 255, 0.90);
-  letter-spacing: 0.3px;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
   position: relative;
   padding-left: 12px;
 }
@@ -1165,17 +1281,17 @@ onBeforeUnmount(() => {
   width: 4px;
   height: 14px;
   border-radius: 6px;
-  background: linear-gradient(180deg, rgba(45, 226, 230, 1), rgba(27, 116, 255, 1));
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
 }
 
 .progress-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  flex: 1;
-  overflow-y: auto;
-  padding-right: 4px;
+  gap: 8px;
+  padding-right: 6px;
+  flex: 0 0 auto;
   min-height: 0;
+  overflow: visible;
 }
 
 .progress-meta {
@@ -1183,14 +1299,20 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 6px;
-  color: rgba(215, 240, 255, 0.72);
+  color: var(--color-text-muted);
   font-size: 13px;
+}
+
+.progress-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary-hover);
 }
 
 .progress-count {
   margin-top: 4px;
   font-size: 11px;
-  color: rgba(124, 199, 255, 0.65);
+  color: var(--color-text-subtle);
   text-align: right;
 }
 
@@ -1198,9 +1320,15 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   flex: 1;
-  overflow: hidden;
-  padding: 10px 12px;
   min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 8px 10px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.grid-block :deep(.el-card__header) {
+  flex-shrink: 0;
 }
 
 .progress-list::-webkit-scrollbar {
@@ -1208,44 +1336,64 @@ onBeforeUnmount(() => {
 }
 
 .progress-list::-webkit-scrollbar-track {
-  background: rgba(124, 199, 255, 0.1);
+  background: var(--color-primary-soft);
   border-radius: 2px;
 }
 
 .progress-list::-webkit-scrollbar-thumb {
-  background: rgba(124, 199, 255, 0.3);
+  background: var(--color-primary-muted);
   border-radius: 2px;
 }
 
 .dark-table {
-  flex: 1;
-  overflow: hidden;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: visible;
+  width: 100%;
 }
 
 .dark-table :deep(.el-table__body-wrapper) {
-  max-height: calc(100% - 40px);
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .chart {
   width: 100%;
-  height: 100%;
-  min-height: 0;
-  flex: 1;
+  flex: none;
+  min-height: var(--dash-chart-h);
+  height: var(--dash-chart-h);
+}
+
+/* 管理员图表卡：统一可视高度，折线/柱状/饼图在同一栅格内对齐 */
+.dash-chart-card :deep(.el-card__body) {
+  padding: 4px 10px 10px;
+  justify-content: flex-start;
+}
+
+.chart-panel {
+  min-height: var(--dash-chart-h);
+  height: var(--dash-chart-h);
+}
+
+.chart-panel--pie {
+  min-height: var(--dash-chart-h);
+  height: var(--dash-chart-h);
 }
 
 .signin-pie-wrap {
   display: flex;
   gap: 14px;
   width: 100%;
-  height: 100%;
+  flex: 1;
   min-height: 0;
+  align-items: stretch;
   padding: 10px 2px;
 }
 
 .signin-chart {
   flex: 1;
   min-width: 0;
+  min-height: var(--dash-chart-h);
+  height: var(--dash-chart-h);
 }
 
 .signin-names {
@@ -1254,12 +1402,13 @@ onBeforeUnmount(() => {
   display: flex;
   gap: 14px;
   justify-content: space-between;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .signin-col {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1268,7 +1417,7 @@ onBeforeUnmount(() => {
 .signin-col-title {
   font-size: 13px;
   font-weight: 700;
-  color: rgba(232, 251, 255, 0.86);
+  color: var(--color-text);
   white-space: nowrap;
 }
 
@@ -1276,10 +1425,10 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  overflow-y: auto;
   padding-right: 6px;
-  min-height: 0;
-  max-height: 100%;
+  flex: 0 1 auto;
+  align-content: flex-start;
+  overflow: visible;
 }
 
 .signin-tag {
@@ -1291,31 +1440,39 @@ onBeforeUnmount(() => {
 
 .signin-empty {
   font-size: 12px;
-  color: rgba(215, 240, 255, 0.55);
+  color: var(--color-text-muted);
 }
 
 .course-time-location-cards {
-  flex: 1;
+  flex: 0 1 auto;
   min-height: 0;
-  overflow-y: auto;
+  overflow: visible;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 12px;
   padding-right: 4px;
+  align-content: start;
 }
 
 .course-time-location-card {
-  border-radius: 12px;
-  border: 1px solid rgba(124, 199, 255, 0.18);
-  background: rgba(9, 24, 48, 0.35);
-  padding: 12px 12px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  padding: 14px;
+  box-shadow: var(--shadow-soft);
+  transition:
+    border-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
+}
+
+.course-time-location-card:hover {
+  border-color: var(--color-primary-muted);
 }
 
 .course-time-location-name {
   font-size: 14px;
-  font-weight: 800;
-  color: rgba(232, 251, 255, 0.92);
+  font-weight: 700;
+  color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1324,96 +1481,93 @@ onBeforeUnmount(() => {
 
 .course-time-location-row {
   font-size: 13px;
-  color: rgba(215, 240, 255, 0.72);
+  color: var(--color-text-muted);
   line-height: 1.6;
   display: flex;
   gap: 8px;
 }
 
 .course-time-location-label {
-  color: rgba(124, 199, 255, 0.75);
+  color: var(--color-text-subtle);
   flex-shrink: 0;
   min-width: 74px;
 }
 
 .course-time-location-value {
-  color: rgba(232, 251, 255, 0.86);
+  color: var(--color-text);
   flex: 1;
   word-break: break-word;
 }
 
 .course-time-location-empty {
   font-size: 12px;
-  color: rgba(215, 240, 255, 0.55);
+  color: var(--color-text-muted);
   padding: 10px 2px;
 }
 
-.cockpit-card {
-  border-radius: 14px;
-  border: 1px solid rgba(124, 199, 255, 0.20);
-  background: linear-gradient(180deg, rgba(9, 24, 48, 0.72) 0%, rgba(6, 18, 39, 0.45) 100%);
-  box-shadow:
-    inset 0 0 0 1px rgba(45, 226, 230, 0.05),
-    0 12px 28px rgba(0, 0, 0, 0.35);
+.dash-card {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-soft);
   overflow: hidden;
+  transition:
+    border-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
 }
 
-.cockpit-card :deep(.el-card__header) {
-  border-bottom: 1px solid rgba(124, 199, 255, 0.14);
-  background: linear-gradient(90deg, rgba(45, 226, 230, 0.08), rgba(27, 116, 255, 0.04));
+.dash-card:hover {
+  border-color: var(--color-primary-muted);
+  box-shadow:
+    0 16px 48px -20px rgba(15, 23, 42, 0.12),
+    0 0 0 1px var(--color-primary-soft);
+}
+
+.dash-card :deep(.el-card__header) {
+  border-bottom: 1px solid var(--color-border);
+  background: linear-gradient(90deg, var(--color-primary-soft) 0%, transparent 100%);
   padding: 10px 12px;
-}
-
-.dark-select {
-  width: 320px;
-}
-
-.dark-select :deep(.el-input__wrapper) {
-  background: rgba(9, 24, 48, 0.65);
-  box-shadow: inset 0 0 0 1px rgba(124, 199, 255, 0.25);
-}
-
-.dark-select :deep(.el-input__inner) {
-  color: rgba(232, 251, 255, 0.90);
 }
 
 .warn-box {
   font-size: 13px;
-  color: rgba(215, 240, 255, 0.72);
+  color: var(--color-text-muted);
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex: 1;
 }
 
 .similarity-alert {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 .similarity-header {
   font-size: 13px;
-  color: rgba(215, 240, 255, 0.72);
+  color: var(--color-text-muted);
 }
 
 .similarity-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  overflow-y: auto;
-  min-height: 0;
   padding-right: 4px;
+  flex: 0 0 auto;
+  overflow: visible;
 }
 
 .similarity-item {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px 10px;
-  border-radius: 12px;
-  border: 1px solid rgba(124, 199, 255, 0.16);
-  background: rgba(9, 24, 48, 0.30);
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: rgba(248, 250, 252, 0.85);
 }
 
 .similarity-top {
@@ -1425,8 +1579,8 @@ onBeforeUnmount(() => {
 
 .similarity-student {
   font-size: 13px;
-  font-weight: 800;
-  color: rgba(232, 251, 255, 0.92);
+  font-weight: 700;
+  color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1434,7 +1588,7 @@ onBeforeUnmount(() => {
 
 .similarity-compared {
   font-size: 12px;
-  color: rgba(215, 240, 255, 0.65);
+  color: var(--color-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1442,39 +1596,85 @@ onBeforeUnmount(() => {
 
 .similarity-meta {
   font-size: 12px;
-  color: rgba(124, 199, 255, 0.75);
+  font-weight: 600;
+  color: var(--color-primary-hover);
 }
 
 .similarity-empty {
   font-size: 12px;
-  color: rgba(215, 240, 255, 0.55);
+  color: var(--color-text-muted);
   padding: 10px 2px;
 }
 
+.dashboard-empty {
+  margin-top: 12px;
+  padding: 24px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+}
+
 @media (max-width: 992px) {
-  .cockpit-viewport {
-    padding: 8px;
+  .dashboard-page {
+    --dash-row-short: min(268px, 48vh);
+    --dash-row-tall: min(288px, 52vh);
+    --dash-chart-h: 188px;
   }
-  .cockpit-stage {
-    padding: 8px;
+
+  .dashboard-hero {
+    flex-wrap: wrap;
   }
-  .dark-select {
-    width: 240px;
+
+  .dashboard-hero__actions {
+    width: 100%;
+    margin-top: 8px;
   }
+
+  .dashboard-course-select {
+    width: 100%;
+  }
+
   .nine-grid {
     grid-template-columns: 1fr;
-    grid-template-rows: auto;
+    grid-template-rows: repeat(9, var(--dash-row-short));
     height: auto;
-    gap: 8px;
+    min-height: 0;
+    gap: 10px;
   }
+
+  .nine-grid--admin {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(9, var(--dash-row-short));
+  }
+
+  /* 窄屏单列：每格固定矮高度，内容在卡片内滚 */
+  .nine-grid > .grid-block:nth-child(1),
+  .nine-grid > .grid-block:nth-child(2),
+  .nine-grid > .grid-block:nth-child(3),
+  .nine-grid > .grid-block:nth-child(4),
+  .nine-grid > .grid-block:nth-child(5),
+  .nine-grid > .grid-block:nth-child(6),
+  .nine-grid > .grid-block:nth-child(7),
+  .nine-grid > .grid-block:nth-child(8),
+  .nine-grid > .grid-block:nth-child(9) {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
   .grid-block {
-    height: auto;
-    min-height: 250px;
+    height: var(--dash-row-short);
+    max-height: var(--dash-row-short);
+    min-height: 0;
   }
-  .kpi-grid {
-    grid-template-columns: repeat(2, 1fr);
-    height: auto;
-    min-height: 180px;
+
+  .nine-grid > .grid-block.bottom-block {
+    height: var(--dash-row-tall);
+    max-height: var(--dash-row-tall);
+  }
+
+  .kpi-grid--quad {
+    grid-template-rows: repeat(2, 1fr);
   }
 }
 </style>

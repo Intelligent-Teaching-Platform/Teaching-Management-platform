@@ -2,7 +2,7 @@
   <div class="login-container">
 <!--    <img src="@/assets/imgs/OIP-C.jpg"/>-->
     <div class="login-box">
-      <div style="font-weight: bold; font-size: 24px; text-align: center; margin-bottom: 30px; color: #1450aa">智辅实验管理平台</div>
+      <h1 class="login-title">智辅实验管理平台</h1>
 
       <!-- Role selection buttons -->
       <div class="role-buttons">
@@ -84,8 +84,11 @@ const login = () => {
       request.post('/login', data.form).then(res => {
         if (res.code === '200') {
           ElMessage.success("登录成功")
-          // 先写入用户信息，避免 Manager.vue 先渲染时拿不到 system-user.id 而回跳登录页
-          localStorage.setItem('system-user', JSON.stringify(res.data))
+          const u = { ...res.data }
+          if (!u.role && data.form.role) {
+            u.role = data.form.role
+          }
+          localStorage.setItem('system-user', JSON.stringify(u))
           router.push('/')
         } else {
           ElMessage.error(res.msg)
@@ -100,68 +103,90 @@ const login = () => {
 
 <style scoped>
 .login-container {
-  height: 100vh;
-  overflow:hidden;
+  min-height: 100dvh;
+  overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
-  //background: linear-gradient(to top, #7f7fd5, #86a8e7, #91eae4);
-  background-size: cover;
-  /* 使用图片作为背景 */
+  padding: 24px 16px;
   background-image: url('@/assets/imgs/home.png');
-  /* 设置背景图片的大小和位置 */
   background-size: cover;
   background-position: center;
-  /* 添加透明背景色 */
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(244, 245, 247, 0.88);
 }
-.login-box {
-  width: 400px;
-  padding: 50px 30px;
-  border-radius: 20px;
-  box-shadow: 0 0 10px rgba(0, 0, 0,.1);
 
-  background:#ffffff;
+.login-box {
+  width: 100%;
+  max-width: 420px;
+  padding: 44px 32px 40px;
+  border-radius: var(--radius-lg, 16px);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--color-border, rgba(15, 23, 42, 0.08));
+  box-shadow: var(--shadow-soft, 0 12px 40px -18px rgba(15, 23, 42, 0.12));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.login-title {
+  margin: 0 0 28px;
+  text-align: center;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text, #0f172a);
 }
 
 .role-buttons {
   display: flex;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
   gap: 10px;
 }
 
 .role-button {
   flex: 1;
   text-align: center;
-  padding: 10px 0;
+  padding: 11px 8px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: all 0.3s;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  color: #606266;
-  background-color: #fff;
+  transition:
+    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid var(--color-border, rgba(15, 23, 42, 0.08));
+  border-radius: var(--radius-sm, 8px);
+  color: var(--color-text-muted, #64748b);
+  background-color: rgba(255, 255, 255, 0.65);
 }
 
 .role-button:hover {
-  color: #1450aa;
-  border-color: #c6e2ff;
-  background-color: #ecf5ff;
+  color: var(--color-primary-hover, #0f766e);
+  border-color: rgba(13, 148, 136, 0.35);
+  background-color: var(--color-primary-soft, rgba(13, 148, 136, 0.1));
+}
+
+.role-button:active {
+  transform: scale(0.98);
 }
 
 .role-button.active {
-  color: #1450aa;
-  font-weight: bold;
-  border-color: #1450aa;
-  background-color: #ecf5ff;
+  color: var(--color-primary-hover, #0f766e);
+  font-weight: 600;
+  border-color: rgba(13, 148, 136, 0.45);
+  background-color: var(--color-primary-muted, rgba(13, 148, 136, 0.16));
+  box-shadow: inset 0 0 0 1px rgba(13, 148, 136, 0.12);
 }
 
 .agreement {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-muted, #64748b);
 }
 
-a {
-  color: #1450aa;
-  text-decoration: none;
+.login-box :deep(a) {
+  color: var(--color-primary-hover, #0f766e);
+  font-weight: 500;
 }
 </style>

@@ -1,24 +1,29 @@
 <template>
-  <div style="width: 50%">
-    <div class="card" style="padding: 30px">
-      <el-form :model="data.user" label-width="100px" style="padding-right: 50px">
-        <div style="margin: 20px 0; text-align: center">
-          <el-upload :show-file-list="false" class="avatar-uploader" :action="uploadUrl" :on-success="handleFileUpload">
-            <img v-if="data.user.avatar" :src="resolveAvatarUrl(data.user.avatar)" class="avatar" />
-            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-          </el-upload>
-        </div>
-        <el-form-item label="账号">
-          <el-input disabled v-model="data.user.username" autocomplete="off" />
-        </el-form-item>
-        <el-form-item label="名称">
-          <el-input v-model="data.user.name" autocomplete="off" />
-        </el-form-item>
-        <div style="text-align: center">
-          <el-button type="primary" @click="save">保存</el-button>
-        </div>
-      </el-form>
+  <div class="person-panel">
+    <div class="person-avatar-block">
+      <el-upload
+        :show-file-list="false"
+        class="avatar-uploader"
+        :action="uploadUrl"
+        :on-success="handleFileUpload"
+      >
+        <img v-if="data.user.avatar" :src="resolveAvatarUrl(data.user.avatar)" class="avatar" alt="" />
+        <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+      </el-upload>
+      <p class="person-avatar-hint">点击上传头像，支持常见图片格式</p>
     </div>
+
+    <el-form :model="data.user" label-width="100px" class="person-form">
+      <el-form-item label="账号">
+        <el-input v-model="data.user.username" disabled autocomplete="off" />
+      </el-form-item>
+      <el-form-item label="名称">
+        <el-input v-model="data.user.name" autocomplete="off" />
+      </el-form-item>
+      <div class="person-actions">
+        <el-button type="primary" @click="save">保 存</el-button>
+      </div>
+    </el-form>
   </div>
 </template>
 
@@ -26,6 +31,7 @@
 import { reactive } from 'vue'
 import request from '@/utils/request'
 import { ElMessage } from 'element-plus'
+import { Plus } from '@element-plus/icons-vue'
 import { getUploadUrl, resolveAvatarUrl } from '@/utils/appConfig'
 
 const uploadUrl = getUploadUrl()
@@ -39,14 +45,13 @@ const handleFileUpload = (response) => {
   if (url) data.user.avatar = typeof url === 'string' ? url : String(url)
 }
 
-const emit = defineEmits(["updateUser"])
-// 把当前修改的用户信息存储到后台数据库
+const emit = defineEmits(['updateUser'])
+
 const save = () => {
   if (data.user.role === 'ADMIN') {
-    request.put('/admin/update', data.user).then(res => {
+    request.put('/admin/update', data.user).then((res) => {
       if (res.code === '200') {
         ElMessage.success('更新成功')
-        //把更新后的用户信息存储到缓存
         localStorage.setItem('system-user', JSON.stringify(data.user))
         emit('updateUser')
       } else {
@@ -58,32 +63,85 @@ const save = () => {
 </script>
 
 <style scoped>
+.person-panel {
+  font-family: var(--font-sans);
+  max-width: min(480px, 100%);
+  margin: 0 auto;
+  padding: 8px 0 4px;
+}
+
+.person-avatar-block {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.person-avatar-hint {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.person-form {
+  padding-right: 0;
+}
+
+.person-form :deep(.el-form-item__label) {
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.person-actions {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+}
+
+.person-actions :deep(.el-button--primary) {
+  min-width: 120px;
+  transition:
+    transform var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
+}
+
+.person-actions :deep(.el-button--primary:active) {
+  transform: scale(0.98);
+}
+
 .avatar-uploader .avatar {
   width: 120px;
   height: 120px;
   display: block;
+  object-fit: cover;
+  border-radius: var(--radius-md);
 }
-</style>
 
-<style>
-.avatar-uploader .el-upload {
-  border: 1px dashed var(--el-border-color);
-  border-radius: 6px;
+.avatar-uploader :deep(.el-upload) {
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  transition: var(--el-transition-duration-fast);
+  background: var(--color-bg-app);
+  transition:
+    border-color var(--duration) var(--ease-out),
+    background-color var(--duration) var(--ease-out),
+    box-shadow var(--duration) var(--ease-out);
 }
 
-.avatar-uploader .el-upload:hover {
-  border-color: var(--el-color-primary);
+.avatar-uploader :deep(.el-upload:hover) {
+  border-color: var(--color-primary-muted);
+  background: var(--color-primary-soft);
+  box-shadow: var(--shadow-soft);
 }
 
-.el-icon.avatar-uploader-icon {
+.avatar-uploader-icon {
   font-size: 28px;
-  color: #8c939d;
+  color: var(--color-text-subtle);
   width: 120px;
   height: 120px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

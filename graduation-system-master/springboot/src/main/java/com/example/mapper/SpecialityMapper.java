@@ -2,6 +2,7 @@ package com.example.mapper;
 
 import com.example.entity.Speciality;
 import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -17,6 +18,8 @@ public interface SpecialityMapper {
             " left join college on speciality.college_id=college.id " +
             "where speciality.name like  concat('%',#{name},'%')")
     List<Speciality> selectByName(String name);
+
+    List<Speciality> selectByCollegeId(@Param("collegeId") Integer collegeId, @Param("name") String name);
 
     void updateById(Speciality speciality);
 

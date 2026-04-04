@@ -23,6 +23,13 @@ public interface CollegeMapper {
             "group by c.id, c.name, c.content, c.score")
     List<College> selectByName(String name);
 
+    @Select("select c.id, c.name, c.content, c.score, IFNULL(count(s.id), 0) as num " +
+            "from college c " +
+            "left join student s on s.college_id = c.id " +
+            "where c.id = #{id} " +
+            "group by c.id, c.name, c.content, c.score")
+    College selectById(Integer id);
+
     void updateById(College college);
 
     @Delete("delete from college where id=#{id}")

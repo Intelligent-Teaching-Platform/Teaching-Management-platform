@@ -41,9 +41,12 @@ public class SpecialityController {
     @GetMapping("/selectPage")
     public Result selectPage(Speciality speciality,
                              @RequestParam(defaultValue = "1") Integer pageNum,
-                             @RequestParam(defaultValue = "5") Integer pageSize)
-    {
-        PageInfo<Speciality> pageInfo = specialityService.selectPage(speciality,pageNum,pageSize);
+                             @RequestParam(defaultValue = "5") Integer pageSize,
+                             @RequestParam(required = false) Integer collegeId) {
+        if (collegeId != null) {
+            speciality.setCollegeId(collegeId);
+        }
+        PageInfo<Speciality> pageInfo = specialityService.selectPage(speciality, pageNum, pageSize);
         return Result.success(pageInfo);
     }
     @DeleteMapping("/delete/{id}")

@@ -5,23 +5,23 @@
       <el-button type="primary" @click="load">查询</el-button>
       <el-button type="info" style="margin: 0 10px" @click="reset">重置</el-button>
       <!-- 教师端新增课程按钮 -->
-      <el-button type="success" v-if="data.user.role === 'TEACHER'" @click="handleAdd">新增课程</el-button>
+      <el-button type="success" v-if="userRole === 'TEACHER'" @click="handleAdd">新增课程</el-button>
     </div>
 
     <!-- 教师端视图：只展示自己教的课 -->
-    <div class="teach-card" v-if="data.user.role === 'TEACHER'">
+    <div class="teach-card" v-if="userRole === 'TEACHER'">
       <CourseCard
           v-for="course in data.tableData"
           :key="course.id"
           :course="course"
           :term="course.term"
-          :show-delete="data.user.role === 'ADMIN'"
+          :show-delete="userRole === 'ADMIN'"
           role="TEACHER"
           @delete="handleDelete(course.id)"
       />
     </div>
-    <!-- 学生端视图：只展示已选课程 -->
-    <div class="teach-card" v-if="data.user.role === 'STUDENT'">
+    <!-- 学生端：已选课 + 本班级课程（后端合并去重） -->
+    <div class="teach-card" v-if="userRole === 'STUDENT'">
       <CourseCard
           v-for="course in data.tableData"
           :key="course.id"
@@ -33,11 +33,12 @@
       />
     </div>
     <!-- 管理员视图：表格布局 -->
-    <div class="card table-view" v-if="data.user.role === 'ADMIN'">
-      <div style="margin-bottom: 10px" v-if="data.user.role === 'ADMIN' || data.user.role === 'TEACHER'">
+    <div class="card table-view" v-if="userRole === 'ADMIN'">
+      <div style="margin-bottom: 10px" v-if="userRole === 'ADMIN' || userRole === 'TEACHER'">
         <el-button type="primary" @click="handleAdd">新增</el-button>
         <el-button type="primary" @click="triggerFileInput">批量导入</el-button>
         <el-button type="success" @click="downloadImportTemplate">下载导入模板</el-button>
+        <el-button type="warning" @click="handleBackfillClassChoices">补全班级选课</el-button>
         <input
             type="file"
             ref="fileInput"
@@ -63,9 +64,9 @@
         <el-table-column label="所属学院" prop="collegeName"></el-table-column>
         <el-table-column label="班级" prop="className"></el-table-column>
         <el-table-column label="学期" prop="term"></el-table-column>
-        <el-table-column label="已选人数" prop="alreadyNum" v-if="data.user.role !== 'STUDENT'"></el-table-column>
+        <el-table-column label="已选人数" prop="alreadyNum" v-if="userRole !== 'STUDENT'"></el-table-column>
 
-        <el-table-column label="操作" align="center" width="160" v-if="data.user.role === 'ADMIN'">
+        <el-table-column label="操作" align="center" width="160" v-if="userRole === 'ADMIN'">
           <template #default="scope">
             <el-button type="primary" @click="handleEdit(scope.row)">编辑</el-button>
             <el-button type="danger" @click="handleDelete(scope.row.id)">删除</el-button>
@@ -81,7 +82,7 @@
     </div>
 
     <!-- 分页组件 -->
-    <div class="card pagination" v-if="data.user.role === 'ADMIN'">
+    <div class="card pagination" v-if="userRole === 'ADMIN'">
       <el-pagination
           background layout="prev, pager, next"
           v-model:page-size="data.pageSize"
@@ -105,7 +106,7 @@
           <el-input v-model="data.form.score" autocomplete="off" />
         </el-form-item>
         <el-form-item label="授课教师" prop="teacherId">
-          <el-select v-model="data.form.teacherId" placeholder="请选择授课教师" :disabled="data.user.role === 'TEACHER'">
+          <el-select v-model="data.form.teacherId" placeholder="请选择授课教师" :disabled="userRole === 'TEACHER'">
             <el-option
                 v-for="item in data.teacherData"
                 :key="item.id"
@@ -121,11 +122,7 @@
           <el-input v-model="data.form.term" autocomplete="off" />
         </el-form-item>
         <el-form-item label="上课时间" prop="time">
-          <el-input
-              v-model="data.form.time"
-              autocomplete="off"
-              placeholder="如：8：00-10：00"
-          />
+          <CourseTimeSlotPicker v-model="data.form.time" />
         </el-form-item>
         <el-form-item label="上课地点" prop="location">
           <el-input v-model="data.form.location" autocomplete="off" />
@@ -164,10 +161,11 @@
 
 <script setup>
 import request from "@/utils/request";
-import { reactive, ref } from "vue";
+import { reactive, ref, computed } from "vue";
 import { ElMessageBox, ElMessage } from "element-plus";
 import router from "@/router";
 import CourseCard from "@/views/manager/CourseCard.vue";
+import CourseTimeSlotPicker from "@/components/CourseTimeSlotPicker.vue";
 
 const fileInput = ref(null);
 
@@ -184,6 +182,21 @@ const data = reactive({
   teacherData: [],
   user: JSON.parse(localStorage.getItem('system-user') || '{}'),
 });
+
+function refreshUserFromStorage() {
+  try {
+    const raw = localStorage.getItem('system-user')
+    if (!raw) return
+    Object.assign(data.user, JSON.parse(raw))
+  } catch (_) {}
+}
+
+/** 与侧栏一致：统一大写，避免库中/缓存为小写时「我学的课」不加载 */
+const userRole = computed(() => {
+  const r = data.user?.role
+  if (r == null || String(r).trim() === '') return ''
+  return String(r).trim().toUpperCase()
+})
 
 // 触发文件选择
 const triggerFileInput = () => {
@@ -213,6 +226,28 @@ const handleFileUpload = async (event) => {
     event.target.value = '';
   }
 };
+
+const handleBackfillClassChoices = () => {
+  ElMessageBox.confirm(
+    '将为所有已绑定班级的课程，给该班还没有选课记录的学生写入 choice，并刷新课程的已选人数。可重复执行，不会重复插入选课。',
+    '补全班级选课',
+    { type: 'warning' }
+  )
+    .then(() => request.post('/course/backfillClassChoices'))
+    .then((res) => {
+      if (res.code === '200') {
+        const n = res.data?.insertedChoices ?? 0
+        ElMessage.success(`补全完成，新增选课记录 ${n} 条`)
+        load()
+      } else {
+        ElMessage.error(res.msg || '补全失败')
+      }
+    })
+    .catch((e) => {
+      if (e === 'cancel' || e === 'close') return
+      ElMessage.error(e?.response?.data?.msg || e?.message || '请求失败')
+    })
+}
 
 // 下载导入模板（后端生成 xlsx）
 const downloadImportTemplate = async () => {
@@ -275,16 +310,29 @@ const loadPage = () => {
   });
 };
 
-// 学生端：只查询已选课程（选课表）
+// 学生端：选课表 choice + 学生所在班级的课程（course.class_id）
 const loadByStudent = () => {
+  const sid = Number(data.user.id)
+  if (!Number.isFinite(sid) || sid <= 0) {
+    ElMessage.error('未获取到学生账号信息，请重新登录')
+    data.tableData = []
+    data.total = 0
+    return
+  }
   request.get('/course/selectPage', {
     params: {
       pageNum: data.pageNum,
       pageSize: 100,
       name: data.name,
-      studentId: data.user.id,
+      studentId: sid,
     },
   }).then(res => {
+    if (res.code !== '200') {
+      ElMessage.error(res.msg || '加载课程失败')
+      data.tableData = []
+      data.total = 0
+      return
+    }
     data.tableData = (res.data?.list || []).map(course => ({
       ...course,
       imageUrl: '/default-course-image.jpg'
@@ -298,11 +346,13 @@ const loadByStudent = () => {
 
 // 统一加载函数
 const load = () => {
-  if (data.user.role === 'TEACHER') {
+  refreshUserFromStorage()
+  const r = userRole.value
+  if (r === 'TEACHER') {
     loadByTeacherName();
-  } else if (data.user.role === 'ADMIN') {
+  } else if (r === 'ADMIN') {
     loadPage();
-  } else if (data.user.role === 'STUDENT') {
+  } else if (r === 'STUDENT') {
     loadByStudent();
   }
 };
@@ -310,7 +360,7 @@ const load = () => {
 // 新增
 const handleAdd = () => {
   data.form = {};
-  if(data.user.role === 'TEACHER') {
+  if (userRole.value === 'TEACHER') {
     data.form.teacherId = data.user.id;
     data.form.teacherName = data.user.name; // 设置教师姓名
   }

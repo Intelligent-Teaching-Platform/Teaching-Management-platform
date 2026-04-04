@@ -61,4 +61,13 @@ public class CollegeController {
         return Result.success(list);
     }
 
+    @GetMapping("/selectById/{id}")
+    public Result selectById(@PathVariable Integer id) {
+        College college = collegeService.selectById(id);
+        if (college == null) {
+            return Result.error("学院不存在");
+        }
+        return Result.success(college);
+    }
+
 }

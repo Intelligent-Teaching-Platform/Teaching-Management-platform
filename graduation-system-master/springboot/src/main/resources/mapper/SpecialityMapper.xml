@@ -4,15 +4,28 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.mapper.SpecialityMapper">
 
+    <select id="selectByCollegeId" resultType="com.example.entity.Speciality">
+        SELECT speciality.*, college.name AS collegeName
+        FROM speciality
+        LEFT JOIN college ON speciality.college_id = college.id
+        WHERE speciality.college_id = #{collegeId}
+        <if test="name != null and name != ''">
+            AND speciality.name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        ORDER BY speciality.id ASC
+    </select>
 
-    <insert id="insert" parameterType="com.example.entity.Speciality" useGeneratedKeys="true">
-        insert into speciality(id, name, college_id)
-        values (#{id}, #{name}, #{collegeId})
+    <insert id="insert" parameterType="com.example.entity.Speciality" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO speciality(name, college_id, content)
+        VALUES (#{name}, #{collegeId}, #{content})
     </insert>
 
     <update id="updateById" parameterType="com.example.entity.Speciality">
-        update speciality set name = #{name}, college_id = #{collegeId}
-        where id = #{id}
+        UPDATE speciality
+        SET name = #{name},
+            college_id = #{collegeId},
+            content = #{content}
+        WHERE id = #{id}
     </update>
 
 </mapper>

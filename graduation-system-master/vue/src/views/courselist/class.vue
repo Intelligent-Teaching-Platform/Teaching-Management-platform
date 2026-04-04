@@ -2,9 +2,7 @@
   <div class="container">
     <div class="header" style="display: flex;justify-content: space-between;margin-top:30px">
       <!--      <el-button type="primary" style="display: flex;margin-left:30px;font-size:16px;box-shadow: 4px 4px 6px rgba(0, 0, 0, 0.1);padding:18px" round v-if="data.user.role === 'TEACHER'">+新建班级</el-button>-->
-      <div class="xsearchInput">
-        <el-icon class="search"><Search /></el-icon>
-      </div>
+      
     </div>
     <div class="class-list">
       <el-card class="box-card" style="width:100%">

@@ -83,58 +83,64 @@
 
 <style scoped>
 .login-container {
-  height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-size: cover;
+  padding: 24px 16px;
   background-image: url('@/assets/imgs/home.png');
+  background-size: cover;
   background-position: center;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(244, 245, 247, 0.88);
 }
 
 .login-box {
-  width: 400px;
-  padding: 50px 30px;
-  border-radius: 20px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  background: #ffffff;
+  width: 100%;
+  max-width: 420px;
+  padding: 44px 32px 40px;
+  border-radius: var(--radius-lg, 16px);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--color-border, rgba(15, 23, 42, 0.08));
+  box-shadow: var(--shadow-soft, 0 12px 40px -18px rgba(15, 23, 42, 0.12));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 .page-title {
-  font-weight: bold;
-  font-size: 24px;
+  font-weight: 700;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
   text-align: center;
-  margin-bottom: 8px;
-  color: #1450aa;
+  margin: 0 0 8px;
+  color: var(--color-text, #0f172a);
 }
 
 .page-subtitle {
   text-align: center;
-  font-size: 16px;
-  font-weight: bold;
-  color: #1450aa;
-  margin-bottom: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-primary-hover, #0f766e);
+  margin: 0 0 10px;
 }
 
 .register-hint {
   text-align: center;
   font-size: 13px;
-  color: #909399;
+  color: var(--color-text-muted, #64748b);
   line-height: 1.5;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
   padding: 0 4px;
 }
 
 .form-footer {
   text-align: right;
   font-size: 14px;
-  color: #606266;
+  color: var(--color-text-muted, #64748b);
 }
 
-a {
-  color: #1450aa;
-  text-decoration: none;
+.login-box :deep(a) {
+  color: var(--color-primary-hover, #0f766e);
+  font-weight: 500;
 }
 </style>

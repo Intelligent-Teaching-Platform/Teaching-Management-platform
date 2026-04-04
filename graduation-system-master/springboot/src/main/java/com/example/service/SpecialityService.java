@@ -25,11 +25,13 @@ public class SpecialityService {
     public PageInfo<Speciality> selectPage(Speciality speciality,Integer pageNum, Integer pageSize) {
         List<Speciality> list;
         PageHelper.startPage(pageNum, pageSize);
-        if(ObjectUtil.isNotEmpty(speciality.getName())) {
+        if (ObjectUtil.isNotEmpty(speciality.getCollegeId())) {
+            String nameFilter = ObjectUtil.isNotEmpty(speciality.getName()) ? speciality.getName() : null;
+            list = specialityMapper.selectByCollegeId(speciality.getCollegeId(), nameFilter);
+        } else if (ObjectUtil.isNotEmpty(speciality.getName())) {
             list = specialityMapper.selectByName(speciality.getName());
-        }
-        else{
-        list =specialityMapper.selectAll();
+        } else {
+            list = specialityMapper.selectAll();
         }
         return PageInfo.of(list);
     }
