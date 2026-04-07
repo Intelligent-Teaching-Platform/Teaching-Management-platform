@@ -1,1 +1,0 @@
-import{_ as t}from"../assets/index-5522120c.js";import"./vue-vendor-83b5f85a.js";import"./element-plus-b7040a51.js";const e={name:"document.vue"};function o(n,r,c,s,p,_){return null}const d=t(e,[["render",o]]);export{d as default};
