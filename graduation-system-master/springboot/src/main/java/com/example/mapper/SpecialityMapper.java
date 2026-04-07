@@ -26,6 +26,9 @@ public interface SpecialityMapper {
     @Delete("delete from speciality where id=#{id}")
     void deleteById(Integer id);
 
+    @Delete("delete from speciality where college_id=#{collegeId}")
+    void deleteByCollegeId(Integer collegeId);
+
 
 }
 

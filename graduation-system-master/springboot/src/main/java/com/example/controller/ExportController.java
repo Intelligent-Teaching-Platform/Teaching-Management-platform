@@ -286,7 +286,7 @@ public class ExportController {
 
             List<Score> sList = scoreByStu.getOrDefault(sid, List.of());
             row.createCell(c++).setCellValue(sList.size());
-            row.createCell(c++).setCellValue(avgInt(sList.stream().map(Score::getScore).collect(Collectors.toList())));
+            row.createCell(c++).setCellValue(avgDouble(sList.stream().map(Score::getScore).collect(Collectors.toList())));
 
             List<Work> w1 = lab1ByStu.getOrDefault(sid, List.of());
             row.createCell(c++).setCellValue(w1.size());

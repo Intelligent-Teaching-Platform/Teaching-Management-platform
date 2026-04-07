@@ -111,6 +111,16 @@ public class TaskService {
         taskMapper.deleteWorkByTaskId(id);
     }
 
+    public List<Task> selectClassesByTeacherAndCourse(Integer teacherId, Integer courseId, String courseName) {
+        if (teacherId != null) {
+            return taskMapper.selectClassesByTeacherAndCourse(teacherId, courseId, courseName);
+        }
+        if (courseId != null) {
+            return taskMapper.selectClassesByCourseId(courseId);
+        }
+        return List.of();
+    }
+
     public List<Task> selectAll() {
         return taskMapper.selectAll();
     }

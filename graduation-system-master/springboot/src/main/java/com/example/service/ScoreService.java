@@ -86,7 +86,8 @@ public class ScoreService {
             double raw = 100d * objectiveCorrectCount / objectiveTotalCount;
             total = BigDecimal.valueOf(raw).setScale(0, RoundingMode.HALF_UP).intValue();
         }
-        score.setScore(total);
+        score.setScore((double) total);
+
 
         scoreMapper.insert(score);
         return score;
@@ -100,7 +101,8 @@ public class ScoreService {
                 total += answer.getResult();
             }
         }
-        score.setScore(total);
+        score.setScore((double) total);
+
         score.setAnswer(JSONUtil.toJsonStr(answerData));
         score.setStatus("已阅卷");
         scoreMapper.updateById(score);

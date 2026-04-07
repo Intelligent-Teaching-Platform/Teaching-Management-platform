@@ -103,7 +103,17 @@ public class StudentService {
         return studentMapper.selectById(id);
     }
 
+    public void resetPassword(Integer id) {
+        Student student = studentMapper.selectById(id);
+        if (ObjectUtil.isNull(student)) {
+            throw new CustomException("学生不存在", null);
+        }
+        student.setPassword("123456");
+        studentMapper.updateById(student);
+    }
+
     @Transactional  //添加事务管理
+
     public void batchInsert(List<Student> students) {
         studentMapper.batchInsert(students);
     }

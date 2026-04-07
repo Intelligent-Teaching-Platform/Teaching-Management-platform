@@ -45,7 +45,7 @@ public class CollegeService {
         }
         // 填充每个学院的专业列表
         for (College c : list) {
-            List<Speciality> specialityList = specialityMapper.selectByCollegeId(c.getId());
+            List<Speciality> specialityList = specialityMapper.selectByCollegeId(c.getId(), null);
             // 填充每个专业的学生人数
             for (Speciality s : specialityList) {
                 if (s.getStudentNum() == null) {
