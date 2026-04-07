@@ -44,6 +44,19 @@ public interface TaskMapper {
                                                     @Param("courseId") Integer courseId,
                                                     @Param("name") String name);
 
+    /** 按课程查询（学生/管理员在带 courseId 分页时使用） */
+    @Select("select t.*, c.name as className from task t " +
+            "left join clazz c on t.class_id = c.id " +
+            "where t.course_id = #{courseId} " +
+            "order by t.id desc")
+    List<Task> selectByCourseId(@Param("courseId") Integer courseId);
+
+    @Select("select t.*, c.name as className from task t " +
+            "left join clazz c on t.class_id = c.id " +
+            "where t.course_id = #{courseId} and t.name like concat('%',#{name},'%') " +
+            "order by t.id desc")
+    List<Task> selectByCourseIdAndName(@Param("courseId") Integer courseId, @Param("name") String name);
+
     @Delete("delete from task where id = #{id}")
     void deleteById(Integer id);
 

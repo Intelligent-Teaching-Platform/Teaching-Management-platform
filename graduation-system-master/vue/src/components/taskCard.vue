@@ -40,12 +40,18 @@
       </div>
 
       <div class="card-actions">
-        <el-button class="action-primary" type="primary" size="small" round @click="$emit('view-task', task)">
+        <el-button
+          class="action-primary"
+          type="primary"
+          size="small"
+          round
+          @click="$emit('view-task', task)"
+        >
           <el-icon><View /></el-icon>
-          查看 / 编辑
+          {{ canManage ? '查看 / 编辑' : '查看' }}
         </el-button>
-        <el-tooltip content="删除任务" placement="top" :show-after="200">
-          <el-button class="action-danger" type="danger" plain size="small" circle @click="$emit('delete-task', task.id)">
+        <el-tooltip v-if="canManage" content="删除任务" placement="top" :show-after="200">
+          <el-button class="action-danger" type="danger" plain size="small" circle @click.stop="$emit('delete-task', task.id)">
             <el-icon><Delete /></el-icon>
           </el-button>
         </el-tooltip>
@@ -63,6 +69,11 @@ const props = defineProps({
   task: {
     type: Object,
     required: true,
+  },
+  /** 是否可编辑、删除（教师为 true；仅浏览时为 false） */
+  canManage: {
+    type: Boolean,
+    default: true,
   },
 })
 

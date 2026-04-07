@@ -27,19 +27,11 @@ export function selectAll(courseId) {
 }
 
 export function selectByName(name) {
-    const encodedName = encodeURIComponent(name.trim());
-    return request({
-        url: '/signIn/selectByName',
-        method: 'get',
-        params: {
-            name: encodedName
-        },
-        paramsSerializer: params => {
-            return Object.entries(params)
-                .map(([key, val]) => `${key}=${val}`)
-                .join('&');
-        }
-    })
+  return request({
+    url: '/signIn/selectByName',
+    method: 'get',
+    params: { name: name.trim() },
+  })
 }
 
 export function selectAllStudents(courseId) {

@@ -32,7 +32,7 @@
           />
           <el-button type="primary" @click="load">查询</el-button>
           <el-button @click="reset">重置</el-button>
-          <el-button type="primary" @click="handleAdd" v-if="data.user.role === 'TEACHER'">新增</el-button>
+          <el-button type="primary" @click="handleAdd" v-if="isTeacherUser">新增</el-button>
         </div>
       </div>
       <el-table :data="filteredAssignments" style="width: 100%" stripe>
@@ -89,7 +89,7 @@
                     size="small"
                     class="op-btn"
                     @click="handleEdit(scope.row)"
-                    v-if="data.user.role === 'STUDENT' && !scope.row.state && !isContentDone(scope.row)"
+                    v-if="isStudentUser && !scope.row.state && !isContentDone(scope.row)"
                 >
                   提交
                 </el-button>
@@ -98,7 +98,7 @@
                     size="small"
                     class="op-btn"
                     @click="handleEdit(scope.row)"
-                    v-if="data.user.role === 'STUDENT' && !scope.row.state && isContentDone(scope.row)"
+                    v-if="isStudentUser && !scope.row.state && isContentDone(scope.row)"
                 >
                   修改
                 </el-button>
@@ -107,7 +107,7 @@
                     size="small"
                     class="op-btn"
                     @click="handleEdit(scope.row)"
-                    v-if="data.user.role === 'STUDENT' && scope.row.state === '未通过'"
+                    v-if="isStudentUser && scope.row.state === '未通过'"
                 >
                   修改
                 </el-button>
@@ -116,7 +116,7 @@
                     size="small"
                     class="op-btn"
                     @click="handleEdit(scope.row)"
-                    v-if="data.user.role === 'TEACHER' && !scope.row.state && isContentDone(scope.row)"
+                    v-if="isTeacherUser && !scope.row.state && isContentDone(scope.row)"
                 >
                   审核
                 </el-button>
@@ -125,7 +125,7 @@
                     size="small"
                     class="op-btn"
                     @click="handleDelete(scope.row.id)"
-                    v-if="data.user.role === 'TEACHER'"
+                    v-if="isTeacherUser"
                 >
                   删除
                 </el-button>
@@ -167,7 +167,7 @@
         destroy-on-close
     >
       <el-form :model="data.form" label-width="120px" style="padding-right: 24px">
-      <el-form-item v-if="data.user.role === 'TEACHER' && similarityHint.visible" label="查重提示">
+      <el-form-item v-if="isTeacherUser && similarityHint.visible" label="查重提示">
         <el-alert
             :title="similarityHint.title"
             :type="similarityHint.type"
@@ -178,7 +178,7 @@
       </el-form-item>
 
         <!-- 学生 · 实验任务：分段提交（题目来自教师发布，学生仅分段填：环境→步骤→总结） -->
-        <template v-if="data.user.role === 'STUDENT' && data.form.lab === 2">
+        <template v-if="isStudentUser && data.form.lab === 2">
           <el-alert
             type="info"
             :closable="false"
@@ -263,14 +263,14 @@
                 show-word-limit
                 maxlength="50"
                 placeholder="请输入实验题目"
-                :disabled="data.user.role === 'STUDENT'"
+                :disabled="isStudentUser"
             />
           </el-form-item>
         </div>
         <el-form-item label="任务内容" prop="content">
-          <el-input v-model="data.form.content" type="textarea" :rows="3" autocomplete="off" :disabled="data.user.role === 'STUDENT'" />
+          <el-input v-model="data.form.content" type="textarea" :rows="3" autocomplete="off" :disabled="isStudentUser" />
         </el-form-item>
-        <template v-if="data.user.role === 'TEACHER' && data.form.lab === 2">
+        <template v-if="isTeacherUser && data.form.lab === 2">
           <el-form-item label="学生·题目">
             <el-input v-model="data.form.studentStageTitle" type="textarea" :rows="2" disabled placeholder="学生无需填写" />
           </el-form-item>
@@ -298,7 +298,7 @@
                 show-word-limit
                 maxlength="500"
                 placeholder="请输入实验环境"
-                :disabled="data.user.role === 'STUDENT' && data.form.lab === 2"
+                :disabled="isStudentUser && data.form.lab === 2"
             />
           </el-form-item>
           <el-form-item label="* 实验内容和步骤">
@@ -309,7 +309,7 @@
                 show-word-limit
                 maxlength="1000"
                 placeholder="请输入实验内容和步骤"
-                :disabled="data.user.role === 'STUDENT' && data.form.lab === 2"
+                :disabled="isStudentUser && data.form.lab === 2"
             />
           </el-form-item>
         </div>
@@ -322,19 +322,19 @@
                 show-word-limit
                 maxlength="1000"
                 placeholder="请输入实验总结和心得体会"
-                :disabled="data.user.role === 'STUDENT' && data.form.lab === 2"
+                :disabled="isStudentUser && data.form.lab === 2"
             />
           </el-form-item>
         </div>
         </template>
 
-        <el-form-item label="评分" prop="score" v-if="data.user.role === 'TEACHER'">
+        <el-form-item label="评分" prop="score" v-if="isTeacherUser">
           <el-input v-model="data.form.score" autocomplete="off"/>
         </el-form-item>
-        <el-form-item label="修改意见" prop="amendment" v-if="data.user.role === 'TEACHER'">
+        <el-form-item label="修改意见" prop="amendment" v-if="isTeacherUser">
           <el-input v-model="data.form.amendment" autocomplete="off"/>
         </el-form-item>
-        <el-form-item label="教师评价" prop="teacherComment" v-if="data.user.role === 'TEACHER'">
+        <el-form-item label="教师评价" prop="teacherComment" v-if="isTeacherUser">
           <div class="teacher-comment-row">
             <el-input
                 v-model="data.form.teacherComment"
@@ -356,7 +356,7 @@
             </el-tooltip>
           </div>
         </el-form-item>
-        <el-form-item label="审核结果" prop="state" :rules="[{ required: true, message: '请选择审核是否通过', trigger: 'change' }]" v-if="data.user.role === 'TEACHER'">
+        <el-form-item label="审核结果" prop="state" :rules="[{ required: true, message: '请选择审核是否通过', trigger: 'change' }]" v-if="isTeacherUser">
           <el-select v-model="data.form.state" placeholder="审核是否通过">
             <el-option label="审核通过" value="审核通过"/>
             <el-option label="未通过" value="未通过"/>
@@ -368,7 +368,7 @@
           <el-button @click="data.formVisible = false">取 消</el-button>
           <el-button
               type="primary"
-              v-if="!(data.user.role === 'STUDENT' && data.form.lab === 2)"
+              v-if="!(isStudentUser && data.form.lab === 2)"
               @click="save"
           >
             提交
@@ -430,6 +430,17 @@ const data = reactive({
     attachment: "",
   },
 });
+
+const isStudentUser = computed(() => String(data.user?.role ?? '').toUpperCase() === 'STUDENT');
+const isTeacherUser = computed(() => String(data.user?.role ?? '').toUpperCase() === 'TEACHER');
+
+function resolveLoginUserId() {
+  const u = data.user || {};
+  const raw = u.id ?? u.userId ?? u.studentId;
+  if (raw == null || raw === '') return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
 
 // 当前课程 ID（来自外部课程卡片）
 const courseId = computed(() => {
@@ -666,15 +677,21 @@ const load = async () => {
     let teacherId = null;
     let studentId = null;
     let classId = null;
-    if (data.user.role === 'TEACHER') {
+    const loginId = resolveLoginUserId();
+    if (isTeacherUser.value) {
       // 清空上一页缓存，避免显示错页数据
       Object.keys(experimentSimilarityMap).forEach(k => delete experimentSimilarityMap[k])
     }
-    if (data.user.role === "TEACHER") {
-      teacherId = data.user.id;
+    if (isTeacherUser.value) {
+      teacherId = loginId;
     }
-    if (data.user.role === "STUDENT") {
-      studentId = data.user.id;
+    if (isStudentUser.value) {
+      if (loginId == null) {
+        ElMessage.error('无法识别当前学生账号，请重新登录');
+        data.tableData = [];
+        return;
+      }
+      studentId = loginId;
       classId = data.user.classId;
     }
     const res = await request.get("/work/selectPage", {
@@ -690,10 +707,14 @@ const load = async () => {
     });
 
     if (res && res.data) {
-      data.tableData = res.data.list || [];
+      let list = res.data.list || [];
+      if (isStudentUser.value && loginId != null) {
+        list = list.filter((row) => Number(row.studentId) === loginId);
+      }
+      data.tableData = list;
       data.total = res.data.total || 0;
       // 仅教师列表需要“实验名称下的相似度”，只预加载当前页
-      if (data.user.role === 'TEACHER') {
+      if (isTeacherUser.value) {
         preloadExperimentSimilarities(data.tableData)
       }
     } else {
@@ -722,7 +743,7 @@ const handleEdit = (row) => {
   similarityHint.visible = false;
   similarityHint.title = '';
   similarityHint.type = 'info';
-  if (data.user.role === 'TEACHER' && (Number(row?.lab) !== 2 ? row?.scontent : hasText(row?.tip2))) {
+  if (isTeacherUser.value && (Number(row?.lab) !== 2 ? row?.scontent : hasText(row?.tip2))) {
     request.get('/work/experimentSimilarity/' + row.id).then((res) => {
       if (res.code === '200') {
         const d = res.data || {};
@@ -767,7 +788,7 @@ const add = () => {
 
 // 编辑保存
 const update = () => {
-  if (data.user.role === "STUDENT") {
+  if (isStudentUser.value) {
     data.form.state = "";
   }
   request.put("/work/update", data.form).then((res) => {

@@ -42,6 +42,7 @@ const router = createRouter({
             },
             { path: 'courseware', component: () => import('@/views/courselist/courseware.vue') },
             { path: 'material', component: () => import('@/views/courselist/material.vue') },
+            { path: 'export', component: () => import('@/views/courselist/Export.vue') },
             { path: 'document', component: () => import('@/views/courselist/document.vue') },
             { path: 'test', component: () => import('@/views/courselist/test.vue') },
             { path: 'task', component: () => import('@/views/courselist/task.vue') },

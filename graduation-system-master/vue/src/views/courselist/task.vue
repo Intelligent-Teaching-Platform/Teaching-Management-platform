@@ -1,65 +1,77 @@
 <template>
-  <div class="task-container">
-    <!-- 页面头部 -->
-    <div class="header">
-      <div class="header-left">
-        <h2 class="page-title">发布任务</h2>
-        <p class="page-subtitle">为班级布置课后与实验任务，支持筛选与快速管理</p>
+  <div class="task-page">
+    <header class="task-hero card">
+      <div class="task-hero__accent" aria-hidden="true" />
+      <div class="task-hero__icon" aria-hidden="true">
+        <el-icon><List /></el-icon>
       </div>
-      <el-button type="primary" @click="handleAdd">
+      <div class="task-hero__text">
+        <h1 class="task-hero__title">发布任务</h1>
+        <p class="task-hero__sub">
+          {{ courseSubtitle }}
+        </p>
+      </div>
+      <el-button v-if="isTeacher" type="primary" class="task-hero__cta" @click="handleAdd">
         <el-icon><Plus /></el-icon>
         新建任务
       </el-button>
-    </div>
+    </header>
 
-    <!-- 搜索和筛选区域 -->
-    <div class="filter-bar">
-      <div class="filter-left">
-        <el-input
-          v-model="searchQuery"
-          placeholder="搜索任务名称"
-          clearable
-          class="search-input"
-          @keyup.enter="handleSearch"
-          @clear="handleSearch"
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-      </div>
-      <div class="filter-actions">
+    <section class="task-toolbar card" aria-label="搜索">
+      <el-input
+        v-model="searchQuery"
+        placeholder="搜索任务名称"
+        clearable
+        class="search-input"
+        @keyup.enter="handleSearch"
+        @clear="handleSearch"
+      >
+        <template #prefix>
+          <el-icon><Search /></el-icon>
+        </template>
+      </el-input>
+      <div class="toolbar-actions">
         <el-button type="primary" @click="handleSearch">搜索</el-button>
         <el-button @click="resetSearch">重置</el-button>
       </div>
-    </div>
+    </section>
 
-    <!-- 任务卡片列表 -->
-    <div class="content" v-loading="loading">
-      <TaskCard
-        v-for="item in data.tableData"
-        :key="item.id"
-        :task="item"
-        @delete-task="handleDelete"
-        @view-task="handleEdit"
-      />
-      <!-- 新建任务卡片 -->
-      <div class="add-task-card" @click="handleAdd">
-        <el-icon class="add-icon"><Plus /></el-icon>
-        <span class="add-text">新建任务</span>
+    <el-alert
+      v-if="!courseId && isTeacher"
+      type="warning"
+      show-icon
+      :closable="false"
+      class="task-alert"
+      title="当前未携带课程信息，发布任务时将无法写入课程维度；请从「课程列表」进入本课程后再使用发布任务。"
+    />
+
+    <section class="task-grid-wrap" v-loading="loading" aria-label="任务列表">
+      <div
+        class="task-grid"
+        :class="{ 'task-grid--empty': !loading && tableList.length === 0 }"
+      >
+        <template v-if="tableList.length > 0">
+          <TaskCard
+            v-for="item in tableList"
+            :key="item.id"
+            :task="item"
+            :can-manage="isTeacher"
+            @delete-task="handleDelete"
+            @view-task="handleViewTask"
+          />
+        </template>
+        <div v-else-if="!loading" class="task-empty">
+          <el-empty :description="emptyDescription" />
+        </div>
       </div>
-    </div>
+    </section>
 
-    <!-- 空状态 -->
-    <el-empty v-if="!loading && data.tableData.length === 0" description="暂无任务，点击新建任务开始" />
-
-    <!-- 分页 -->
-    <div class="pagination" v-if="data.total > 0">
+    <div class="task-pagination card" v-if="data.total > 0">
       <el-pagination
         background
-        layout="prev, pager, next, total"
-        v-model:current-page="data.pageNum"
-        v-model:page-size="data.pageSize"
+        layout="sizes, prev, pager, next, total"
+        :current-page="data.pageNum"
+        :page-size="data.pageSize"
         :total="data.total"
         :page-sizes="[5, 10, 20, 50]"
         @current-change="changePage"
@@ -67,7 +79,6 @@
       />
     </div>
 
-    <!-- 新建/编辑任务抽屉（右侧打开） -->
     <el-drawer
       v-model="data.formVisible"
       :title="data.form.id ? '编辑任务' : '新建任务'"
@@ -75,49 +86,17 @@
       size="520px"
       :close-on-click-modal="false"
       destroy-on-close
-      @close="resetForm"
+      class="task-drawer"
+      @closed="resetForm"
     >
       <div class="drawer-hero" aria-hidden="true">
         <div class="drawer-hero-text">
           <div class="drawer-hero-title">任务配置</div>
-          <div class="drawer-hero-sub">在这里填写任务信息并快速发布到班级</div>
+          <div class="drawer-hero-sub">填写信息后保存，系统将按班级为学生生成对应作业记录</div>
         </div>
-        <div class="drawer-hero-art"></div>
       </div>
 
       <el-form class="drawer-form" :model="data.form" :rules="rules" ref="formRef" label-width="90px">
-        <div class="drawer-cover">
-          <div class="drawer-cover-label">封面</div>
-          <div class="drawer-cover-body">
-            <div class="cover-preview" v-if="data.form.cover">
-              <div class="cover-preview-frame">
-                <img class="cover-img" :src="getCoverPreviewUrl(data.form.cover)" alt="任务封面预览" />
-                <div class="cover-preview-shine" aria-hidden="true"></div>
-              </div>
-              <div class="cover-meta">
-                <span class="cover-meta-hint">发布后将以 16:9 比例展示在任务卡片顶部</span>
-                <el-button type="danger" plain size="small" @click="removeCover">移除封面</el-button>
-              </div>
-            </div>
-            <el-upload
-              v-else
-              class="cover-uploader"
-              :action="uploadUrl"
-              name="file"
-              :show-file-list="false"
-              accept="image/*"
-              :on-success="handleCoverSuccess"
-              :on-error="handleUploadError"
-            >
-              <div class="cover-uploader-inner">
-                <div class="cover-uploader-title">上传封面图</div>
-                <div class="cover-uploader-sub">建议 16:9，≤ 4MB</div>
-                <el-button type="primary" plain size="small">选择图片</el-button>
-              </div>
-            </el-upload>
-          </div>
-        </div>
-
         <el-form-item label="任务名称" prop="name">
           <el-input
             v-model="data.form.name"
@@ -133,7 +112,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="发放班级" prop="classId">
-          <el-select v-model="data.form.classId" placeholder="请选择发放班级" style="width: 100%">
+          <el-select v-model="data.form.classId" placeholder="请选择发放班级" filterable style="width: 100%">
             <el-option
               v-for="item in data.classData"
               :key="item.id"
@@ -165,25 +144,38 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted, computed } from 'vue'
+import { reactive, ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus } from '@element-plus/icons-vue'
+import { Search, Plus, List } from '@element-plus/icons-vue'
 import TaskCard from '@/components/taskCard.vue'
 import request from '@/utils/request'
-import { getUploadUrl, resolveAvatarUrl } from '@/utils/appConfig'
 
 const route = useRoute()
 const formRef = ref(null)
 const loading = ref(false)
 const saving = ref(false)
 const searchQuery = ref('')
-const uploadUrl = computed(() => getUploadUrl())
 
 const courseId = computed(() => {
   const id = route.query.id || route.params.id
-  return id != null ? Number(id) : null
+  return id != null && id !== '' ? Number(id) : null
 })
+
+const courseName = computed(() => (route.query.courseName ? String(route.query.courseName) : ''))
+
+const courseSubtitle = computed(() => {
+  if (courseName.value) {
+    return `当前课程：${courseName.value} · 为班级布置课后与实验任务，支持搜索与分页`
+  }
+  return '为班级布置课后与实验任务，支持搜索与分页'
+})
+
+const isTeacher = computed(() => data.user.role === 'TEACHER')
+
+const emptyDescription = computed(() =>
+  isTeacher.value ? '暂无任务，点击页面上方「新建任务」开始发布' : '暂无任务'
+)
 
 const data = reactive({
   pageNum: 1,
@@ -196,11 +188,20 @@ const data = reactive({
   user: JSON.parse(localStorage.getItem('system-user') || '{}'),
 })
 
+const tableList = computed(() => data.tableData || [])
+
 const rules = {
   name: [{ required: true, message: '请输入任务名称', trigger: 'blur' }],
   lab: [{ required: true, message: '请选择任务类型', trigger: 'change' }],
   content: [{ required: true, message: '请输入任务内容', trigger: 'blur' }],
   classId: [{ required: true, message: '请选择发放班级', trigger: 'change' }],
+}
+
+function normalizePagePayload(raw) {
+  if (!raw || typeof raw !== 'object') return { list: [], total: 0 }
+  const list = raw.list ?? raw.records ?? raw.rows ?? []
+  const total = Number(raw.total ?? raw.totalCount ?? list.length) || 0
+  return { list: Array.isArray(list) ? list : [], total }
 }
 
 const loadClass = async () => {
@@ -221,20 +222,20 @@ const load = async () => {
       pageNum: data.pageNum,
       pageSize: data.pageSize,
     }
-    if (searchQuery.value) {
-      params.name = searchQuery.value
+    if (searchQuery.value.trim()) {
+      params.name = searchQuery.value.trim()
     }
     if (data.user.role === 'TEACHER') {
       params.teacherId = data.user.id
     }
-    // 关键：按当前课程过滤，避免跨课程查看到其它课程的任务
-    if (courseId.value != null) {
+    if (courseId.value != null && !Number.isNaN(courseId.value)) {
       params.courseId = courseId.value
     }
     const res = await request.get('/task/selectPage', { params })
     if (res.code === '200') {
-      data.tableData = res.data?.list || []
-      data.total = res.data?.total || 0
+      const { list, total } = normalizePagePayload(res.data)
+      data.tableData = list
+      data.total = total
     } else {
       ElMessage.error(res.msg || '加载失败')
     }
@@ -258,8 +259,14 @@ const resetSearch = () => {
 }
 
 const handleAdd = () => {
-  data.form = {}
-  data.form.courseId = courseId.value
+  if (!isTeacher.value) return
+  if (courseId.value == null || Number.isNaN(courseId.value)) {
+    ElMessage.warning('请先进入具体课程后再发布任务（需带上课程信息）')
+    return
+  }
+  data.form = {
+    courseId: courseId.value,
+  }
   data.formVisible = true
 }
 
@@ -268,39 +275,27 @@ const handleEdit = (row) => {
   data.formVisible = true
 }
 
-const handleCoverSuccess = (res) => {
-  let body = res
-  if (typeof body === 'string') {
-    try {
-      body = JSON.parse(body)
-    } catch {
-      body = null
-    }
-  }
-  if (body?.code === '200' && body?.data != null && body.data !== '') {
-    data.form.cover = body.data
+const handleViewTask = (row) => {
+  if (isTeacher.value) {
+    handleEdit(row)
     return
   }
-  ElMessage.error(body?.msg || '封面上传失败')
+  ElMessageBox.alert(row.content || '暂无内容描述', row.name || '任务详情', {
+    confirmButtonText: '关闭',
+    dangerouslyUseHTMLString: false,
+  }).catch(() => {})
 }
-
-const handleUploadError = () => {
-  ElMessage.error('上传失败（多为接口 404）：请确认后端已启动，且 vue/public/config.json 中 serverUrl 与后端一致')
-}
-
-const removeCover = () => {
-  data.form.cover = ''
-}
-
-const getCoverPreviewUrl = (url) => resolveAvatarUrl(url || '')
 
 const resetForm = () => {
-  formRef.value?.resetFields()
   data.form = {}
 }
 
 const save = async () => {
   if (!formRef.value) return
+  if (courseId.value == null || Number.isNaN(courseId.value)) {
+    ElMessage.warning('缺少课程信息，无法保存')
+    return
+  }
   try {
     await formRef.value.validate()
     saving.value = true
@@ -316,9 +311,10 @@ const save = async () => {
     if (data.form.id != null && data.form.id !== '') {
       payload.id = data.form.id
     }
-    const res = payload.id != null
-      ? await request.put('/task/update', payload)
-      : await request.post('/task/add', payload)
+    const res =
+      payload.id != null
+        ? await request.put('/task/update', payload)
+        : await request.post('/task/add', payload)
     if (res.code === '200') {
       ElMessage.success('操作成功')
       data.formVisible = false
@@ -338,18 +334,23 @@ const save = async () => {
 }
 
 const handleDelete = (id) => {
+  if (!isTeacher.value) return
   ElMessageBox.confirm('删除后数据无法恢复，您确定删除吗？', '删除确认', {
     type: 'warning',
   })
-    .then(() => {
-      request.delete(`/task/delete/${id}`).then((res) => {
+    .then(async () => {
+      try {
+        const res = await request.delete(`/task/delete/${id}`)
         if (res.code === '200') {
           ElMessage.success('删除成功')
           load()
         } else {
           ElMessage.error(res.msg || '删除失败')
         }
-      })
+      } catch (e) {
+        console.error(e)
+        ElMessage.error(e?.response?.data?.msg || e?.message || '删除失败')
+      }
     })
     .catch(() => {})
 }
@@ -365,234 +366,186 @@ const handleSizeChange = (size) => {
   load()
 }
 
+watch(
+  () => [route.query.id, route.params.id],
+  () => {
+    data.pageNum = 1
+    load()
+  }
+)
+
 onMounted(() => {
   loadClass()
   load()
 })
 </script>
 
-<style scoped>
-  .task-container {
-  padding: 24px 32px;
-  min-height: calc(100vh - 60px);
+<style scoped lang="scss">
+.task-page {
+  padding: 16px 20px 28px;
+  min-height: 100%;
   box-sizing: border-box;
-  background:
-    radial-gradient(1200px 480px at 12% -10%, rgba(64, 158, 255, 0.14), transparent 55%),
-    radial-gradient(900px 400px at 92% 0%, rgba(34, 211, 238, 0.1), transparent 50%),
-    linear-gradient(180deg, #eef2f9 0%, #f4f6f9 38%, #f6f7fb 100%);
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: transparent;
 }
 
-.header {
+.task-hero {
+  position: relative;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 20px;
-  padding: 18px 24px;
-  background: rgba(255, 255, 255, 0.94);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    0 16px 40px rgba(20, 63, 140, 0.07);
-  backdrop-filter: blur(8px);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 20px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-soft);
 }
 
-.header-left {
+.task-hero__accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(
+    180deg,
+    var(--color-primary) 0%,
+    color-mix(in srgb, var(--color-primary) 70%, #0f766e) 100%
+  );
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.task-hero__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
 }
 
-.page-title {
-  margin: 0 0 4px;
-  font-size: 22px;
+.task-hero__text {
+  flex: 1;
+  min-width: 200px;
+}
+
+.task-hero__title {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
   font-weight: 700;
-  color: #0f172a;
   letter-spacing: -0.02em;
+  color: var(--color-text);
 }
 
-.page-subtitle {
+.task-hero__sub {
   margin: 0;
-  font-size: 13px;
-  color: #909399;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+  max-width: 44rem;
 }
 
-.header :deep(.el-button--primary) {
-  box-shadow: 0 4px 14px rgba(64, 158, 255, 0.35);
+.task-hero__cta {
+  margin-left: auto;
+  border-radius: 999px;
   font-weight: 600;
 }
 
-.filter-bar {
+.task-toolbar {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 20px;
-  padding: 14px 20px;
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
-  backdrop-filter: blur(6px);
-}
-
-.filter-left {
-  flex: 1;
-}
-
-.filter-actions {
-  display: flex;
-  gap: 10px;
-  flex-shrink: 0;
+  gap: 12px;
+  margin-bottom: 16px;
+  border: 1px solid var(--color-border);
 }
 
 .search-input {
-  width: 100%;
+  flex: 1 1 220px;
+  min-width: 180px;
+  max-width: 360px;
 }
 
-.content {
+.toolbar-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.task-alert {
+  margin-bottom: 16px;
+  border-radius: var(--radius-md);
+}
+
+.task-grid-wrap {
+  min-height: 200px;
+  margin-bottom: 16px;
+}
+
+.task-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 16px;
-  margin-bottom: 20px;
+  align-items: stretch;
 }
 
-.add-task-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-  height: 100%;
-  align-self: stretch;
-  border: 2px dashed rgba(64, 158, 255, 0.35);
-  border-radius: 16px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(240, 247, 255, 0.92) 100%);
-  cursor: pointer;
-  transition: all 0.28s ease;
-  position: relative;
-  overflow: hidden;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+.task-grid--empty {
+  align-items: start;
+  /* 空态下避免子项落到「单列窄轨」，由子元素自行占满宽度 */
+  grid-template-columns: 1fr;
 }
 
-.add-task-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(500px 200px at 50% 0%, rgba(64, 158, 255, 0.16), transparent 60%),
-    linear-gradient(135deg, rgba(64, 158, 255, 0.06), rgba(34, 211, 238, 0.05));
-  opacity: 0.85;
-  transition: opacity 0.28s ease;
+.task-empty {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+  padding: 28px 16px;
+  background: var(--color-bg-elevated);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
 }
 
-.add-task-card:hover {
-  border-color: rgba(64, 158, 255, 0.85);
-  background: linear-gradient(180deg, #fff 0%, #f0f7ff 100%);
-  transform: translateY(-4px);
-  box-shadow:
-    0 12px 32px rgba(64, 158, 255, 0.18),
-    0 4px 12px rgba(15, 23, 42, 0.06);
-}
-
-.add-task-card:hover::before {
-  opacity: 1;
-}
-
-.add-icon {
-  z-index: 1;
-  font-size: 40px;
-  color: #409eff;
-  margin-bottom: 12px;
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(64, 158, 255, 0.25);
-  box-shadow: 0 10px 24px rgba(64, 158, 255, 0.2);
-  transition: transform 0.28s ease, box-shadow 0.28s ease;
-}
-
-.add-task-card:hover .add-icon {
-  transform: scale(1.06) rotate(90deg);
-  box-shadow: 0 14px 32px rgba(64, 158, 255, 0.28);
-}
-
-.add-text {
-  z-index: 1;
-  color: #475569;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-.add-task-card:hover .add-text {
-  color: #1450aa;
-}
-
-.pagination {
+.task-pagination {
   display: flex;
   justify-content: center;
-  padding: 18px 20px;
-  background: rgba(255, 255, 255, 0.94);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
 }
 
-/* -----------------------------
-   Drawer（右侧抽屉）美化：上方插画 + 更紧凑的表单
------------------------------- */
+.task-pagination :deep(.el-pagination) {
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: 8px;
+}
+
 .drawer-hero {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 14px 14px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(220, 223, 230, 0.7);
-  background:
-    radial-gradient(900px 220px at 0% 0%, rgba(64, 158, 255, 0.16), transparent 55%),
-    radial-gradient(700px 200px at 100% 0%, rgba(34, 211, 238, 0.12), transparent 60%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.86));
+  padding: 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
   margin-bottom: 14px;
 }
 
 .drawer-hero-title {
   font-size: 16px;
   font-weight: 700;
-  color: #101828;
+  color: var(--color-text);
 }
 
 .drawer-hero-sub {
   margin-top: 4px;
   font-size: 12px;
-  color: #667085;
-}
-
-.drawer-hero-art {
-  width: 88px;
-  height: 64px;
-  border-radius: 12px;
-  background:
-    linear-gradient(135deg, rgba(47, 107, 255, 0.92), rgba(0, 198, 255, 0.86));
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 10px 22px rgba(64, 158, 255, 0.18);
-}
-
-.drawer-hero-art::before {
-  content: '';
-  position: absolute;
-  inset: -40px;
-  background:
-    radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.35), transparent 55%),
-    linear-gradient(to right, rgba(255, 255, 255, 0.18) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.14) 1px, transparent 1px);
-  background-size: auto, 14px 14px, 14px 14px;
-  transform: rotate(8deg);
+  color: var(--color-text-muted);
+  line-height: 1.45;
 }
 
 .drawer-form {
@@ -605,154 +558,18 @@ onMounted(() => {
   gap: 10px;
 }
 
-.drawer-cover {
-  margin-bottom: 12px;
-  padding: 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(20, 80, 170, 0.1);
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  box-shadow: 0 8px 26px rgba(15, 23, 42, 0.05);
-}
-
-.drawer-cover-label {
-  font-size: 13px;
-  font-weight: 700;
-  color: #101828;
-  margin-bottom: 8px;
-}
-
-.drawer-cover-body {
-  display: flex;
-  align-items: stretch;
-}
-
-.cover-preview {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.cover-preview-frame {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: 14px;
-  overflow: hidden;
-  background: linear-gradient(145deg, #e8f1ff, #f0f4ff);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 12px 36px rgba(20, 63, 140, 0.12);
-  border: 1px solid rgba(64, 158, 255, 0.18);
-}
-
-.cover-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  transition: transform 0.35s ease;
-}
-
-.cover-preview-frame:hover .cover-img {
-  transform: scale(1.03);
-}
-
-.cover-preview-shine {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    125deg,
-    rgba(255, 255, 255, 0.45) 0%,
-    transparent 42%,
-    transparent 58%,
-    rgba(255, 255, 255, 0.08) 100%
-  );
-  opacity: 0.9;
-}
-
-.cover-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.cover-meta-hint {
-  font-size: 12px;
-  color: #64748b;
-  line-height: 1.5;
-  flex: 1;
-  min-width: 160px;
-}
-
-.cover-uploader {
-  width: 100%;
-}
-
-.cover-uploader-inner {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  min-height: 140px;
-  border-radius: 14px;
-  border: 2px dashed rgba(64, 158, 255, 0.45);
-  background:
-    radial-gradient(700px 220px at 20% 0%, rgba(64, 158, 255, 0.14), transparent 55%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(241, 245, 249, 0.85));
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  box-shadow: 0 6px 20px rgba(20, 63, 140, 0.06);
-}
-
-.cover-uploader-inner:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 36px rgba(64, 158, 255, 0.16);
-  border-color: rgba(64, 158, 255, 0.9);
-}
-
-.cover-uploader-title {
-  font-size: 14px;
-  font-weight: 800;
-  color: #175cd3;
-}
-
-.cover-uploader-sub {
-  font-size: 12px;
-  color: #667085;
-}
-
-/* 响应式适配 */
-@media (max-width: 992px) {
-  .task-container {
-    padding: 16px;
-  }
-
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-}
-
 @media (max-width: 768px) {
-  .filter-bar {
-    flex-direction: column;
-    align-items: flex-start;
+  .task-hero__cta {
+    width: 100%;
   }
 
-  .filter-actions {
+  .toolbar-actions {
     width: 100%;
+    margin-left: 0;
     justify-content: flex-end;
   }
 
-  .content {
+  .task-grid {
     grid-template-columns: 1fr;
   }
 }

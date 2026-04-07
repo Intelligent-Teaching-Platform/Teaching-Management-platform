@@ -1,878 +1,737 @@
 <template>
-  <div class="container">
-    <div class="header" style="display: flex;justify-content: space-between;margin-top:30px">
-      <!--      <el-button type="primary" style="display: flex;margin-left:30px;font-size:16px;box-shadow: 4px 4px 6px rgba(0, 0, 0, 0.1);padding:18px" round v-if="data.user.role === 'TEACHER'">+新建班级</el-button>-->
-      
-    </div>
-    <div class="class-list">
-      <el-card class="box-card" style="width:100%">
-        <div class="card-header">
-          <span style="font-size:16px;font-weight: bold;margin-top: 30px;">签到列表</span>
-          <div class="setting">
-          </div>
-        </div>
-        <!--可视化签到饼图-->
-        <div class="signIn-chart-container">
-          <div id="signInChart" class="sign-chart"></div>
-          <div class="sign-lists">
-            <div class="sign-list">
-              <div class="sign-list-title">已签到学生（{{ signedNames.length }}）</div>
-              <div class="sign-list-body">
-                <el-tag
-                  v-for="name in signedNames"
-                  :key="`signed-${name}`"
-                  class="sign-tag"
-                  type="success"
-                  effect="dark"
-                >
-                  {{ name }}
-                </el-tag>
-                <div v-if="!signedNames.length" class="sign-empty">暂无已签到学生</div>
-              </div>
-            </div>
-            <div class="sign-list">
-              <div class="sign-list-title">未签到学生（{{ unsignedNames.length }}）</div>
-              <div class="sign-list-body">
-                <el-tag
-                  v-for="name in unsignedNames"
-                  :key="`unsigned-${name}`"
-                  class="sign-tag"
-                  type="danger"
-                  effect="plain"
-                >
-                  {{ name }}
-                </el-tag>
-                <div v-if="!unsignedNames.length" class="sign-empty">暂无未签到学生</div>
-              </div>
-            </div>
-          </div>
-        </div>
+  <div class="class-page">
+    <header class="class-hero card">
+      <div class="class-hero__accent" aria-hidden="true" />
+      <div class="class-hero__icon" aria-hidden="true">
+        <el-icon><UserFilled /></el-icon>
+      </div>
+      <div class="class-hero__text">
+        <h1 class="class-hero__title">班级活动 · 签到</h1>
+        <p class="class-hero__sub">{{ pageSubtitle }}</p>
+      </div>
+    </header>
 
+    <section class="class-panel card" v-loading="pageLoading">
+      <div class="panel-head">
+        <h2 class="panel-title">当前签到</h2>
+      </div>
 
-        <el-text v-for="(item, index) in classes" :key="index" style="margin-bottom: 20px;display: block;">
-          <div style="font-size:16px;display: flex;justify-content:space-between;align-items: center;">
-            <div style="display: flex; align-items: center;">
-              <el-checkbox v-if="showCheckboxes" v-model="selectedClasses[index]" style="margin-right: 10px;"></el-checkbox>
-              <div>{{ item.name }}</div>
-            </div>
-            <div>加入班级人数：{{ item.students }}人</div>
-            <div style="display: flex; align-items: center;">
-              <el-button
-                  v-if="data.user.role === 'TEACHER'"
-                  type="primary" @click="openSigninDialog">签到</el-button>
-
-              <el-button
-                  v-if="data.user.role === 'STUDENT'"
-                  type="success"
-                  @click="clickSign"
-                  :disabled="hasSigned"
-                  :class="{ 'signed-button': hasSigned }"
+      <div class="signin-chart-wrap">
+        <div ref="chartRef" class="sign-chart" />
+        <div class="sign-lists">
+          <div class="sign-list">
+            <div class="sign-list-title">已签到（{{ signedNames.length }}）</div>
+            <div class="sign-list-body">
+              <el-tag
+                v-for="name in signedNames"
+                :key="`signed-${name}`"
+                class="sign-tag"
+                type="success"
+                effect="light"
               >
-                {{ hasSigned ? '已签到' : '签到' }}
-              </el-button>
-
-              <el-button type="primary" @click="openSelectDialog" v-if="data.user.role === 'TEACHER'">选人</el-button>
-              <!--              <el-button type="primary" @click="openQuizDialog">抢答</el-button>-->
-              <el-popover
-                  placement="bottom"
-                  trigger="hover"
-              >
-                <template #default>
-                  <div style="display: flex; flex-direction: column; align-items: center;">
-                    <el-button type="primary" link @click="renameClass">重命名</el-button>
-                    <el-button type="primary" link @click="deleteClass">删除</el-button>
-                  </div>
-                </template>
-                <template #reference>
-                  <div class="icon-more"><img src="@/assets/imgs/dian.png"/></div>
-                </template>
-              </el-popover>
+                {{ name }}
+              </el-tag>
+              <div v-if="!signedNames.length" class="sign-empty">暂无</div>
             </div>
           </div>
-        </el-text>
-      </el-card>
-    </div>
-    <!--    管理对话框-->
-
-    <div class="history-signIn" v-if="data.user.role === 'TEACHER'">
-      <el-card class="box-card" style="width:100%">
-        <span style="font-size:16px;font-weight: bold;margin-top: 50px;">历史签到</span>
-        <hr style="margin:30px">
-        <div class="card-header">
-
-          <el-table :data="data.tableData" stripe style="font-size: 16px;">
-            <el-table-column prop="teacherId" label="教师ID"></el-table-column>
-            <el-table-column prop="id" label="签到ID"></el-table-column>
-            <el-table-column prop="distance" label="距离限制"></el-table-column>
-            <el-table-column label="开始时间" align="center">
-              <template #default="scope">
-                <div class="time-cell">
-                  <div>{{ formatDate(scope.row.startTime) }}</div>
-                  <div>{{ formatTime(scope.row.startTime) }}</div>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column label="结束时间" align="center">
-              <template #default="scope">
-                <div class="time-cell">
-                  <div>{{ formatDate(scope.row.endTime) }}</div>
-                  <div>{{ formatTime(scope.row.endTime) }}</div>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column label="创建时间" align="center">
-              <template #default="scope">
-                <div class="time-cell">
-                  <div>{{ formatDate(scope.row.createTime) }}</div>
-                  <div>{{ formatTime(scope.row.createTime) }}</div>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="num" label="已签人数"></el-table-column>
-            <el-table-column prop="snum" label="课程总人数"></el-table-column>
-          </el-table>
-
+          <div class="sign-list">
+            <div class="sign-list-title">未签到（{{ unsignedNames.length }}）</div>
+            <div class="sign-list-body sign-list-body--unsigned">
+              <el-tag
+                v-for="name in unsignedNames"
+                :key="`unsigned-${name}`"
+                class="sign-tag"
+                type="danger"
+                effect="plain"
+              >
+                {{ name }}
+              </el-tag>
+              <div v-if="!unsignedNames.length" class="sign-empty">暂无</div>
+            </div>
+          </div>
         </div>
-      </el-card>
-    </div>
+      </div>
 
+      <div
+        v-for="(item, index) in classes"
+        :key="item.name + '-' + index"
+        class="class-row"
+      >
+        <div class="class-row__main">
+          <span class="class-row__name">{{ item.name }}</span>
+        </div>
+        <div class="class-row__meta">选课人数：{{ displayStudentCount(item) }}</div>
+        <div class="class-row__actions">
+          <el-button
+            v-if="data.user.role === 'TEACHER'"
+            type="primary"
+            round
+            @click="openSigninDialog"
+          >
+            发起签到
+          </el-button>
+          <el-button
+            v-if="data.user.role === 'STUDENT'"
+            type="success"
+            round
+            :disabled="hasSigned"
+            @click="clickSign"
+          >
+            {{ hasSigned ? '已签到' : '签到' }}
+          </el-button>
+          <el-button
+            v-if="data.user.role === 'TEACHER'"
+            type="primary"
+            plain
+            round
+            @click="openSelectDialog"
+          >
+            随机选人
+          </el-button>
+        </div>
+      </div>
+    </section>
 
-    <!-- 签到方式选择对话框 -->
-    <el-dialog v-model="signinDialogVisible" title="签到" width="400px">
-      <el-form>
-        <el-form-item label="签到方式">
-          <el-radio-group v-model="signinMethod">
-            <el-radio label="普通">签到</el-radio>
-            <el-radio label="签到码">签到码</el-radio>
-            <el-input
-                v-if="signinMethod === '签到码'"
-                v-model="checkInCode"
-                readonly
-                style="width: 100px; margin-left: 5px;" />
-          </el-radio-group>
+    <section v-if="data.user.role === 'TEACHER'" class="class-panel card">
+      <h2 class="panel-title">历史签到</h2>
+      <el-table :data="data.tableData" stripe class="history-table" v-loading="historyLoading">
+        <el-table-column prop="teacherId" label="教师 ID" width="90" />
+        <el-table-column prop="id" label="签到 ID" width="90" />
+        <el-table-column prop="distance" label="距离限制(m)" width="110" />
+        <el-table-column label="开始时间" align="center" min-width="120">
+          <template #default="scope">
+            <div class="time-cell">
+              <div>{{ formatDate(scope.row.startTime) }}</div>
+              <div class="time-cell__sub">{{ formatTime(scope.row.startTime) }}</div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="结束时间" align="center" min-width="120">
+          <template #default="scope">
+            <div class="time-cell">
+              <div>{{ formatDate(scope.row.endTime) }}</div>
+              <div class="time-cell__sub">{{ formatTime(scope.row.endTime) }}</div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="创建时间" align="center" min-width="120">
+          <template #default="scope">
+            <div class="time-cell">
+              <div>{{ formatDate(scope.row.createTime) }}</div>
+              <div class="time-cell__sub">{{ formatTime(scope.row.createTime) }}</div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="num" label="已签人数" width="100" />
+        <el-table-column prop="snum" label="课程人数" width="100" />
+      </el-table>
+      <div class="history-pagination" v-if="data.total > 0">
+        <el-pagination
+          background
+          layout="prev, pager, next, total"
+          :current-page="data.pageNum"
+          :page-size="data.pageSize"
+          :total="data.total"
+          @current-change="changeHistoryPage"
+        />
+      </div>
+    </section>
+
+    <el-dialog
+      v-model="signinDialogVisible"
+      title="发起签到"
+      width="420px"
+      class="class-dialog"
+      destroy-on-close
+      @closed="resetSigninForm"
+    >
+      <el-form label-position="top">
+        <el-form-item label="活动时长（分钟）">
+          <el-input-number v-model="activityDuration" :min="1" :max="60" style="width: 100%" />
+          <p class="form-hint">后端限制为 1～60 分钟</p>
         </el-form-item>
-        <el-form-item label="活动时长 (分钟)">
-          <el-input-number v-model="activityDuration" :min="1" :max="120" />
+        <el-form-item label="允许定位误差（米）">
+          <el-input-number v-model="signDistance" :min="50" :max="1000" :step="50" style="width: 100%" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="resetForm">重置</el-button>
-          <el-button type="primary" @click="handleCreateSignIn">确定</el-button>
-        </div>
+        <el-button @click="signinDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="creatingSignIn" @click="handleCreateSignIn">确定</el-button>
       </template>
     </el-dialog>
 
-    <!--    抽人对话框-->
-    <el-dialog v-model="selectDialogVisible" title="抽人" width="400px">
-      <el-form>
-        <el-form-item >
-          <el-button type="primary" @click="randomSelectStudent">随机选人</el-button>
-          <el-input v-model="selectedStudentName"  readonly style="margin-left: 10px; width: 200px;"/>
+    <el-dialog
+      v-model="selectDialogVisible"
+      title="随机选人"
+      width="440px"
+      class="class-dialog"
+      destroy-on-close
+      @closed="selectedStudentName = ''"
+    >
+      <el-form label-position="top">
+        <el-form-item label="随机抽取">
+          <el-button type="primary" @click="randomSelectStudent">开始随机</el-button>
+          <el-input v-model="selectedStudentName" readonly class="random-result" placeholder="结果将显示在这里" />
         </el-form-item>
         <el-form-item label="指定学生">
-          <el-select v-model="selectedStudent" placeholder="请选择学生">
+          <el-select v-model="selectedStudent" placeholder="请选择学生" filterable style="width: 100%">
             <el-option
-                v-for="student in students"
-                :key="student.id"
-                :label="student.name"
-                :value="student.id"
+              v-for="student in students"
+              :key="student.id"
+              :label="student.name"
+              :value="student.id"
             />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="selectDialogVisible = false">关闭</el-button>
-        </div>
+        <el-button type="primary" @click="selectDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
   </div>
-
-
 </template>
 
 <script setup>
-import { ref,reactive} from 'vue';
-import {ElInput, ElCheckbox, ElMessage} from 'element-plus';
-import * as echarts from 'echarts';
-import { onMounted, nextTick } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { UserFilled, MoreFilled } from '@element-plus/icons-vue'
+import * as echarts from 'echarts'
+import request from '@/utils/request'
+import { createSignIn, recordSignIn, selectAll, selectByName } from '@/api/signin'
 
+const route = useRoute()
+const chartRef = ref(null)
+let chartInstance = null
+let resizeHandler = null
+let refreshTimer = null
+let rollIntervalId = null
 
+const pageLoading = ref(true)
+const historyLoading = ref(false)
+const creatingSignIn = ref(false)
 
-const input = ref('');
-const showCheckboxes = ref(false);
-const selectedClasses = ref([]);
-const dialogVisible = ref(false);
-const signinDialogVisible = ref(false);
-const signinMethod = ref('普通');
-const requirePhoto = ref(false);
-const activityDuration = ref(30);
-const selectDialogVisible = ref(false);
-const selectedClass = reactive({ name: '', students: 0 });
-const selectedStudent = ref('');
-const selectedStudentName = ref('');
-const checkInCode = ref(''); // 新增字段，保存签到码
-const hasSigned = ref(false);
+const signinDialogVisible = ref(false)
+const activityDuration = ref(30)
+const signDistance = ref(100)
+const selectDialogVisible = ref(false)
+const selectedStudent = ref(undefined)
+const selectedStudentName = ref('')
+const hasSigned = ref(false)
 
+const students = ref([])
+const classes = ref([])
+const courseId = ref(null)
 
-
-// const students = ref([
-//   { id: 1, name: '张三' },
-//   { id: 2, name: '李四' },
-//   { id: 3, name: '王五' },
-//   { id: 4, name: '赵六' },
-// ]);
-
-const students = ref([]);
-
-// 时间格式化：分行显示 日期 / 时间
-const formatDate = (cellValue) => {
-  if (!cellValue) return '';
-  const d = new Date(cellValue);
-  if (Number.isNaN(d.getTime())) return cellValue;
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-};
-const formatTime = (cellValue) => {
-  if (!cellValue) return '';
-  const d = new Date(cellValue);
-  if (Number.isNaN(d.getTime())) return cellValue;
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-};
-
-const loading = ref(false);
-const error = ref(null);
-
-const loadStudent = async () => {
-  loading.value = true;
-  error.value = null;
-
-  try {
-    const res = await request.get('/student/selectAll');
-
-    console.log('原始响应数据:', res); // 调试用，查看完整响应结构
-
-    // 根据实际响应结构调整
-    if (res.code === '200' && Array.isArray(res.data)) {
-      // 提取需要的字段(id和name)
-      students.value = res.data.map(item => ({
-        id: item.id,
-        name: item.name
-      }));
-    } else {
-      throw new Error(res.msg || '获取数据失败');
-    }
-
-    console.log('处理后的学生数据:', students.value); // 调试用
-
-  } catch (err) {
-    error.value = err.message || '获取数据失败';
-    console.error('获取学生数据失败:', err);
-  } finally {
-    loading.value = false;
-  }
-};
-
-// const classes = [
-//   { name: '计科2203', students: 34 },
-//   { name: '计科2202', students: 30 }
-// ];
-const classes = ref([]); // 初始化空数组
-
-const defaultLocation = {
-  latitude: 39.9042,
-  longitude: 116.4074,
-  distance: 100 // 签到距离限制(米)
-};
-import { watch } from 'vue';
-import {createSignIn, recordSignIn, selectAll, selectByName} from '@/api/signin';
-import {useRoute} from "vue-router";
-import request from "@/utils/request";
-
-watch(signinMethod, (newVal) => {
-  if (newVal === '签到码') {
-    const code = Math.floor(1000 + Math.random() * 9000); // 生成 1000-9999 的随机数
-    checkInCode.value = code.toString(); // 赋值给响应式数据
-    console.log('自动生成的签到码:', checkInCode.value);
-  }
-});
-const props = defineProps({
-  currentCourseId: {
-    type: Number,
-    required: true
-  },
-  currentUserId: {
-    type: Number,
-    required: true
-  }
-});
+const chartData = reactive({ signed: 0, unsigned: 0 })
+const signedNames = ref([])
+const unsignedNames = ref([])
 
 const data = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  total: 0,
   tableData: [],
   user: JSON.parse(localStorage.getItem('system-user') || '{}'),
-});
+})
 
-const route = useRoute();
-const courseId = ref(null)
-// 简化的用户ID获取（优先使用props中的currentUserId）
-const getTeacherId = () => {
-  // 优先使用props中的ID
-  if (props.currentUserId) {
-    return Number(props.currentUserId);
+const pageSubtitle = computed(() => {
+  const name = route.query.courseName ? String(route.query.courseName) : ''
+  if (name) return `课程：${name} · 教师发起签到，学生在签到有效期内点击签到`
+  return '教师发起签到，学生在有效期内参与；图表与名单随轮询刷新'
+})
+
+function displayStudentCount(item) {
+  if (item?.students != null && item.students !== '—') return item.students
+  const n = chartData.signed + chartData.unsigned
+  return n > 0 ? n : '—'
+}
+
+function normalizePagePayload(raw) {
+  if (!raw || typeof raw !== 'object') return { list: [], total: 0 }
+  const list = raw.list ?? raw.records ?? raw.rows ?? []
+  const total = Number(raw.total ?? raw.totalCount ?? list.length) || 0
+  return { list: Array.isArray(list) ? list : [], total }
+}
+
+const formatDate = (cellValue) => {
+  if (!cellValue) return ''
+  const d = new Date(cellValue)
+  if (Number.isNaN(d.getTime())) return String(cellValue)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+const formatTime = (cellValue) => {
+  if (!cellValue) return ''
+  const d = new Date(cellValue)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
+function getTeacherId() {
+  const id = data.user?.id
+  if (id == null) {
+    ElMessage.error('无法获取当前用户')
+    throw new Error('MISSING_USER_ID')
   }
+  return Number(id)
+}
 
-  // 备选方案：从本地存储获取
-  if (data.user?.id) {
-    return Number(data.user.id);
-  }
+function getStudentId() {
+  return getTeacherId()
+}
 
-  ElMessage.error('无法获取用户ID');
-  throw new Error('MISSING_USER_ID');
-};
+async function resolveCourseContext() {
+  const qid = route.query.id
+  const courseName = route.query.courseName ? String(route.query.courseName) : ''
 
-const getStudentId = () => {
-  // 优先使用props中的ID
-  if (props.currentUserId) {
-    return Number(props.currentUserId);
-  }
-
-  // 备选方案：从本地存储获取
-  if (data.user?.id) {
-    return Number(data.user.id);
-  }
-
-  ElMessage.error('无法获取用户ID');
-  throw new Error('MISSING_USER_ID');
-};
-
-
-const openSelectDialog = () => {
-  dialogVisible.value = false;
-  selectDialogVisible.value = true;
-  selectedStudentName.value = '';
-};
-let intervalId = null;
-const randomSelectStudent = () => {
-  if (students.value.length === 0) {
-    selectedStudentName.value = '没有学生可供选择';
-    return;
-  }
-  // 清除之前的定时器
-  clearInterval(intervalId);
-
-  let count = 0;
-  const totalRolls = 10; // 滚动次数
-
-  intervalId = setInterval(() => {
-    const randomIndex = Math.floor(Math.random() * students.value.length);
-    const selected = students.value[randomIndex];
-    selectedStudentName.value = selected.name;
-    count++;
-    if (count >= totalRolls) {
-      clearInterval(intervalId);
-      console.log('随机选中的学生:', selected.name);
+  if (qid != null && qid !== '') {
+    const id = Number(qid)
+    if (!Number.isNaN(id)) {
+      courseId.value = id
+      classes.value = [
+        {
+          name: courseName || `课程 #${id}`,
+          students: '—',
+        },
+      ]
+      return
     }
-  }, 100); // 每100毫秒滚动一次
-};
-const toggleSettings = () => {
-  showCheckboxes.value = !showCheckboxes.value;
-  if (!showCheckboxes.value) {
-    selectedClasses.value = [];
   }
-};
-const openSigninDialog = () => {
-  dialogVisible.value = false;
-  signinDialogVisible.value = true;
-};
 
-
-// 分页查询
-const load = () => {
-  request.get('/signIn/selectPage', {
-    params: {
-      pageNum: data.pageNum,
-      pageSize: data.pageSize,
-      courseId: courseId.value,
+  if (courseName) {
+    const response = await selectByName(courseName)
+    if (response.code === '200' && response.data?.id != null) {
+      courseId.value = response.data.id
+      classes.value = [
+        {
+          name: response.data.name || courseName,
+          students: response.data.alreadyNum ?? '—',
+        },
+      ]
+      return
     }
-  }).then(res => {
-    data.tableData = res.data?.list;
-    data.total = res.data?.total;
-  });
-};
+    throw new Error(response.msg || '根据课程名称解析失败')
+  }
 
+  throw new Error('缺少课程参数')
+}
 
-const renameClass = () => {
-  // 重命名班级的逻辑
-  console.log('重命名班级');
-};
-
-const deleteClass = () => {
-  // 删除班级的逻辑
-  console.log('删除班级');
-};
-
-const handleCreateSignIn = async () => {
+async function loadStudentsByCourse() {
+  if (!courseId.value) return
   try {
-    const params = {
-      courseId: courseId.value,
-      teacherId: getTeacherId(),
-      latitude: 39.9042,
-      longitude: 116.4074,
-      duration: activityDuration.value,
-      distance: 100,
-    };
-
-    console.log('提交参数:', params);
-
-    const response = await createSignIn(params);
-
-    // 更宽松的成功判断条件
-    if (response.code === "200") {
-      ElMessage.success('签到创建成功');
-      signinDialogVisible.value = false;
-      // 更新图表数据
-      chartData.signed = response.data.num;
-      chartData.unsigned = response.data.unum;
-      updateChart();
-
-      return response.data;
+    const res = await request.get('/student/selectByCourseId', {
+      params: { courseId: courseId.value },
+    })
+    if (res.code === '200' && Array.isArray(res.data)) {
+      students.value = res.data.map((item) => ({ id: item.id, name: item.name }))
+    } else {
+      students.value = []
     }
-
-    // 尝试解析可能的错误信息
-    const errorMsg = response.data?.message ||
-        response.message ||
-        '签到请求已完成，但返回状态异常';
-    throw new Error(errorMsg);
-
-  } catch (error) {
-    console.error('完整错误:', {
-      error,
-      response: error.response,
-      config: error.config
-    });
-
-    // 更友好的错误提示
-    const msg = error.response?.data?.message ||
-        error.message ||
-        '签到过程出现异常';
-    ElMessage.error(msg);
+  } catch (e) {
+    console.error(e)
+    students.value = []
   }
-};
+}
 
-const resetForm = () => {
-  signinMethod.value = '签到';
-
-  activityDuration.value = 30;
-};
-
-const handleDraw = () => {
-  // 抽人逻辑
-  console.log('抽人');
-};
-
-
-const clickSign = async () => {
-  try {
-    if (hasSigned.value) return; // 如果已签到，直接返回
-
-    const params = {
-      courseId: courseId.value,
-      studentId: getStudentId(),
-      latitude: 39.9042,
-      longitude: 116.4074,
-    };
-
-    console.log('提交参数:', params);
-
-    const response = await recordSignIn(params);
-
-    if (response.code === "200") {
-      ElMessage.success('学生签到成功');
-      hasSigned.value = true; // 签到成功后更新状态
-      signinDialogVisible.value = false;
-      return;
-    }
-
-    const errorMsg = response.data?.message ||
-        response.message ||
-        '你已签到，不要重复签到';
-    throw new Error(errorMsg);
-
-  } catch (error) {
-    console.error('完整错误:', error);
-    const msg = error.response?.data?.message ||
-        error.message ||
-        '签到过程出现异常';
-    ElMessage.error(msg);
-  }
-};
-
-const checkSignStatus = async () => {
-  try {
-    const response = await checkSignInStatus(courseId.value, getStudentId());
-    if (response.code === "200") {
-      hasSigned.value = response.data.hasSigned;
-    }
-  } catch (error) {
-    console.error('检查签到状态错误:', error);
-  }
-};
-
-const chartData = reactive({
-  signed: 0,
-  unsigned: 0
-});
-
-const signedNames = ref([]);
-const unsignedNames = ref([]);
-
-// 初始化图表
-const REFRESH_INTERVAL = 1000;
-let chartInstance = null;
-const initChart = () => {
-  const chartDom = document.getElementById('signInChart');
-  if (!chartDom) return;
-
-  // 销毁旧实例
+function initChart() {
+  const el = chartRef.value
+  if (!el) return
   if (chartInstance) {
-    chartInstance.dispose();
+    chartInstance.dispose()
+    chartInstance = null
+  }
+  chartInstance = echarts.init(el)
+  if (resizeHandler) {
+    window.removeEventListener('resize', resizeHandler)
+    resizeHandler = null
   }
 
-  chartInstance = echarts.init(chartDom);
-
-  const option = {
+  chartInstance.setOption({
+    color: ['#0d9488', '#f97316'],
     title: {
-      text: '班级签到情况',
-      left: 'center'
+      text: '签到情况',
+      left: 'center',
+      top: 8,
+      textStyle: { fontSize: 14, color: '#0f172a', fontWeight: 600 },
     },
     tooltip: {
       trigger: 'item',
-      formatter: '{a} <br/>{b}: {c}人 ({d}%)'
+      formatter: '{a} <br/>{b}: {c} 人 ({d}%)',
     },
     legend: {
       orient: 'vertical',
       left: 'left',
-      data: ['已签到', '未签到']
+      top: 'middle',
+      textStyle: { color: '#64748b' },
     },
     series: [
       {
-        name: '签到情况',
+        name: '签到',
         type: 'pie',
-        radius: ['50%', '70%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: '#fff',
-          borderWidth: 2
-        },
-        label: {
-          show: true,
-          formatter: '{b}: {c}人\n({d}%)'
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: '18',
-            fontWeight: 'bold'
-          }
-        },
-        labelLine: {
-          show: true
-        },
+        radius: ['42%', '68%'],
+        center: ['58%', '55%'],
+        avoidLabelOverlap: true,
+        itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
+        label: { formatter: '{b}\n{c} 人 ({d}%)', color: '#475569' },
         data: [
-          { value: chartData.signed, name: '已签到', itemStyle: { color: '#67C23A' } },
-          { value: chartData.unsigned, name: '未签到', itemStyle: { color: '#F56C6C' } }
-        ]
+          { value: chartData.signed, name: '已签到' },
+          { value: chartData.unsigned, name: '未签到' },
+        ],
+      },
+    ],
+  })
+  resizeHandler = () => chartInstance?.resize()
+  window.addEventListener('resize', resizeHandler)
+}
+
+function updateChart() {
+  if (!chartInstance) return
+  chartInstance.setOption({
+    series: [
+      {
+        data: [
+          { value: chartData.signed, name: '已签到' },
+          { value: chartData.unsigned, name: '未签到' },
+        ],
+      },
+    ],
+  })
+}
+
+function syncStudentSignedState() {
+  if (data.user.role !== 'STUDENT') return
+  const name = (data.user.name || '').trim()
+  if (!name) {
+    hasSigned.value = false
+    return
+  }
+  hasSigned.value = signedNames.value.some((n) => (n || '').trim() === name)
+}
+
+async function fetchSignInData() {
+  if (!courseId.value) return
+  try {
+    const response = await selectAll(courseId.value)
+    if (response.code === '200' && response.data) {
+      chartData.signed = response.data.num ?? 0
+      chartData.unsigned = response.data.unum ?? 0
+      signedNames.value = response.data.signedNames || []
+      unsignedNames.value = response.data.unsignedNames || []
+      if (classes.value[0]) {
+        const total = chartData.signed + chartData.unsigned
+        if (total > 0) classes.value[0].students = total
       }
-    ]
-  };
+      updateChart()
+      syncStudentSignedState()
+    }
+  } catch (e) {
+    console.error(e)
+  }
+}
 
-  chartInstance.setOption(option);
-
-  // 响应式调整
-  window.addEventListener('resize', function() {
-    chartInstance && chartInstance.resize();
-  });
-};
-
-const fetchSignInData = async () => {
+async function loadHistory() {
+  if (!courseId.value || data.user.role !== 'TEACHER') return
+  historyLoading.value = true
   try {
-    if (!courseId.value) return;
-    const response = await selectAll(courseId.value);
-    if (response.code === "200") {
-      chartData.signed = response.data.num || 0;
-      chartData.unsigned = response.data.unum || 0;
-      signedNames.value = response.data.signedNames || [];
-      unsignedNames.value = response.data.unsignedNames || [];
-      updateChart();
-    } else {
-      const errorMsg = response.data?.message || response.message || '获取签到数据失败';
-      ElMessage.error(errorMsg);
+    const res = await request.get('/signIn/selectPage', {
+      params: {
+        pageNum: data.pageNum,
+        pageSize: data.pageSize,
+        courseId: courseId.value,
+      },
+    })
+    if (res.code === '200') {
+      const { list, total } = normalizePagePayload(res.data)
+      data.tableData = list
+      data.total = total
     }
-  } catch (error) {
-    console.error('获取签到数据错误:', error);
-    ElMessage.error('获取签到数据时出现异常');
+  } catch (e) {
+    console.error(e)
+    ElMessage.error('历史签到加载失败')
+  } finally {
+    historyLoading.value = false
   }
-};
+}
 
-// 更新图表数据
-const updateChart = () => {
-  if (chartInstance) {
-    const option = {
-      series: [{
-        data: [
-          { value: chartData.signed, name: '已签到', itemStyle: { color: '#67C23A' } },
-          { value: chartData.unsigned, name: '未签到', itemStyle: { color: '#F56C6C' } }
-        ]
-      }]
-    };
-    chartInstance.setOption(option);
+function changeHistoryPage(p) {
+  data.pageNum = p
+  loadHistory()
+}
+
+const openSelectDialog = () => {
+  selectDialogVisible.value = true
+  selectedStudentName.value = ''
+}
+
+const randomSelectStudent = () => {
+  if (rollIntervalId) clearInterval(rollIntervalId)
+  if (!students.value.length) {
+    selectedStudentName.value = '本课程暂无学生数据'
+    return
   }
-};
-
-const fetchCourseIdByName = async(name)  => {
-  try{
-    console.log('请求参数:', { name });
-    const response = await selectByName(name)
-    console.log('响应结果:', {
-      status: response.status,
-      data: response.data,
-      fullResponse: response
-    });
-    if(response.code === "200") {
-      courseId.value=response.data.id;
-      classes.value = [ // 假设只有一个班级（根据业务场景调整）
-        {
-          name: response.data.name,
-          students: response.data.alreadyNum
-        }
-      ];
-    } else {
-      ElMessage.error('获取课程id失败')
+  let count = 0
+  rollIntervalId = setInterval(() => {
+    const idx = Math.floor(Math.random() * students.value.length)
+    selectedStudentName.value = students.value[idx].name
+    count++
+    if (count >= 12) {
+      clearInterval(rollIntervalId)
+      rollIntervalId = null
     }
-  } catch (error) {
-    ElMessage.error('获取课程id失败')
-  }
-};
+  }, 80)
+}
 
-const fetchStudents = async (courseId) => {
-  try {
-    const response = await selectAllStudents(courseId);
-    if (response.code === "200") {
-      classes.value = [ // 假设只有一个班级（根据业务场景调整）
-        {
-          name: response.data.name,
-          students: response.data.alreadyNum
-        }
-      ];
-    } else {
-      ElMessage.error('获取学生列表失败')
-    }
-  } catch (error) {
-    ElMessage.error('获取学生列表失败')
-  }
-};
-onMounted(async () => {
-  nextTick(() => {
-    initChart();
-  });
+const openSigninDialog = () => {
+  signinDialogVisible.value = true
+}
 
-  console.log('路由参数中的 id:', route.query.courseName);
-  const courseName = route.query.courseName;
-  if (courseName) {
-    await fetchCourseIdByName(courseName);
-  } else {
-    ElMessage.error('课程名称缺失');
-    return;
-  }
+const resetSigninForm = () => {
+  activityDuration.value = 30
+  signDistance.value = 100
+}
 
+const handleCreateSignIn = async () => {
   if (!courseId.value) {
-    ElMessage.error('无法获取课程ID');
-    return;
+    ElMessage.warning('缺少课程')
+    return
   }
+  creatingSignIn.value = true
+  try {
+    const payload = {
+      courseId: courseId.value,
+      teacherId: getTeacherId(),
+      duration: activityDuration.value,
+      distance: signDistance.value,
+    }
+    const response = await createSignIn(payload)
+    if (response.code === '200') {
+      ElMessage.success('签到已发起')
+      signinDialogVisible.value = false
+      await fetchSignInData()
+      await loadHistory()
+    } else {
+      ElMessage.error(response.msg || '发起失败')
+    }
+  } catch (e) {
+    console.error(e)
+    ElMessage.error(e?.response?.data?.msg || e?.message || '发起失败')
+  } finally {
+    creatingSignIn.value = false
+  }
+}
 
-  // 初始加载数据
-  fetchSignInData();
-  load();
-  loadStudent();
+const clickSign = async () => {
+  if (hasSigned.value || !courseId.value) return
+  try {
+    const payload = {
+      courseId: courseId.value,
+      studentId: getStudentId(),
+      latitude: 39.9042,
+      longitude: 116.4074,
+    }
+    const response = await recordSignIn(payload)
+    if (response.code === '200') {
+      ElMessage.success('签到成功')
+      hasSigned.value = true
+      await fetchSignInData()
+    } else {
+      ElMessage.error(response.msg || '签到失败')
+    }
+  } catch (e) {
+    console.error(e)
+    ElMessage.error(e?.response?.data?.msg || e?.message || '签到失败')
+  }
+}
 
-  // 设置3秒定时刷新
-  const refreshInterval = setInterval(fetchSignInData, 10000);
+watch(
+  () => [route.query.id, route.query.courseName],
+  async () => {
+    try {
+      pageLoading.value = true
+      await resolveCourseContext()
+      await loadStudentsByCourse()
+      await fetchSignInData()
+      await loadHistory()
+      nextTick(() => {
+        if (!chartInstance) initChart()
+        else updateChart()
+      })
+    } catch (e) {
+      ElMessage.error(e?.message || '课程信息无效')
+    } finally {
+      pageLoading.value = false
+    }
+  }
+)
 
-  // 组件卸载时清除定时器
-  onUnmounted(() => {
-    clearInterval(refreshInterval);
-  });
-});
+onMounted(async () => {
+  try {
+    await resolveCourseContext()
+    await loadStudentsByCourse()
+    await nextTick()
+    initChart()
+    await fetchSignInData()
+    await loadHistory()
+    refreshTimer = setInterval(fetchSignInData, 10000)
+  } catch (e) {
+    console.error(e)
+    ElMessage.error(e?.message || '页面加载失败，请从课程导航进入')
+  } finally {
+    pageLoading.value = false
+  }
+})
 
-// 在签到成功时刷新数据
-const handleSignInSuccess = () => {
-
-  checkSignStatus();
-  fetchSignInData();
-};
-
+onUnmounted(() => {
+  if (refreshTimer) clearInterval(refreshTimer)
+  if (rollIntervalId) clearInterval(rollIntervalId)
+  if (resizeHandler) {
+    window.removeEventListener('resize', resizeHandler)
+    resizeHandler = null
+  }
+  if (chartInstance) {
+    chartInstance.dispose()
+    chartInstance = null
+  }
+})
 </script>
-<style scoped>
-.container {
-  width: 92%;
-  height: 100%;
-}
 
-/* 统一卡片基础样式 */
-.box-card {
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  margin-bottom: 1px;
-  transition: all 0.3s ease;
-}
-
-.box-card:hover {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
-}
-
-.xsearchInput {
-  display: inline-block;
-  position: relative;
-  margin-right: 20px;
-}
-
-.xsearchInput input {
-  width: 200px;
-  height: 36px;
-  line-height: 34px;
-  border-radius: 50px;
-  border: 1px solid #D4D6D9;
+<style scoped lang="scss">
+.class-page {
+  padding: 16px 20px 28px;
+  min-height: 100%;
   box-sizing: border-box;
-  padding: 0 44px 0 14px;
-  font-size: 14px;
-  color: #474C59;
-  transition: border-color 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: transparent;
 }
 
-.search {
+.class-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-soft);
+}
+
+.class-hero__accent {
   position: absolute;
-  top: 10px;
-  right: 14px;
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(
+    180deg,
+    var(--color-primary) 0%,
+    color-mix(in srgb, var(--color-primary) 70%, #0f766e) 100%
+  );
+  border-radius: 2px;
+  pointer-events: none;
 }
 
-.notes {
-  display: block;
-  margin-top: 20px;
-  margin-left: 30px;
-  color: #a9a9a9;
-  white-space: normal;
-  font-size: 14px;
-}
-
-/* 统一标题样式 */
-.card-header, .history-signIn .box-card > span {
-  margin-bottom: 20px;
-  padding-bottom: 15px;
-  display: flex;
-  align-items: center;
-  border-bottom: 2px solid #F3F3F3;
-  width: 100%;
-}
-
-.card-header span, .history-signIn .box-card > span {
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.setting {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  margin-right: 30px;
-}
-
-.more-setting {
-  margin-right: 15px;
-  margin-top:30px;
-  color: #2d53d0;
-  cursor: pointer;
-  width:100px;
-}
-
-.input{
-  width: 240px;
-  height: 30px;
-  margin-top: 30px;
-  border-radius: 20px;
-}
-
-.class-list {
-  margin-left: 30px;
-  margin-top: 30px;
-  margin-right: 30px;
-}
-
-.icon-more {
-  padding-left: 10px;
-  width: 20px;
-  height: 20px;
-  background: no-repeat center center;
+.class-hero__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 24px;
 }
 
-.icon-more img {
-  transition: filter 0.3s;
+.class-hero__text {
+  min-width: 0;
 }
 
-.icon-more:hover img {
-  filter: brightness(0) saturate(100%) invert(55%) sepia(100%) saturate(102%) hue-rotate(180deg) brightness(105%) contrast(101%);
+.class-hero__title {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
-.signIn-chart-container {
-  margin: 24px 30px 16px;
-  padding: 16px 20px;
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.06);
+.class-hero__sub {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+  max-width: 46rem;
+}
+
+.class-panel {
+  margin-bottom: 16px;
+  border: 1px solid var(--color-border);
+}
+
+.panel-head {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.signin-chart-wrap {
   display: flex;
+  flex-wrap: wrap;
   gap: 16px;
   align-items: stretch;
+  margin-bottom: 20px;
 }
 
 .sign-chart {
-  flex: 1.2;
-  min-height: 320px;
+  flex: 1 1 280px;
+  min-height: 300px;
+  min-width: 0;
+  background: var(--color-bg-app);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
 }
 
 .sign-lists {
-  flex: 1;
+  flex: 1 1 260px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
 }
 
 .sign-list {
-  background: #f8fafc;
-  border-radius: 10px;
-  padding: 10px 12px;
-  border: 1px solid #e5e9f2;
+  background: var(--color-bg-app);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  border: 1px solid var(--color-border);
 }
 
 .sign-list-title {
   font-size: 13px;
   font-weight: 600;
-  color: #303133;
-  margin-bottom: 6px;
+  color: var(--color-text);
+  margin-bottom: 8px;
 }
 
 .sign-list-body {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.sign-list-body--unsigned {
+  align-content: flex-start;
 }
 
 .sign-tag {
@@ -881,38 +740,47 @@ const handleSignInSuccess = () => {
 
 .sign-empty {
   font-size: 12px;
-  color: #909399;
+  color: var(--color-text-subtle);
 }
 
-@media (max-width: 992px) {
-  .signIn-chart-container {
-    flex-direction: column;
-  }
-
-  .sign-chart {
-    min-height: 260px;
-  }
+.class-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--color-border);
 }
 
-/* 历史签到样式优化 */
-.history-signIn {
-  margin-left: 30px;
-  margin-right: 30px;
+.class-row__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 200px;
+  min-width: 0;
 }
 
-.history-signIn .box-card {
-  padding: 20px;
+.class-row__name {
+  font-weight: 600;
+  color: var(--color-text);
 }
 
-.history-signIn .box-card > span {
-  display: block;
-  margin-bottom: 20px;
+.class-row__meta {
+  font-size: 13px;
+  color: var(--color-text-muted);
 }
 
-/* 表格样式优化 */
-.history-signIn .el-table {
-  margin-top: 10px;
-  border-radius: 8px;
+.class-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-left: auto;
+}
+
+.history-table {
+  margin-top: 12px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -920,15 +788,42 @@ const handleSignInSuccess = () => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
-.time-cell > div:first-child {
-  font-size: 13px;
-}
-
-.time-cell > div:last-child {
+.time-cell__sub {
   font-size: 12px;
-  color: #909399;
+  color: var(--color-text-muted);
+}
+
+.history-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.form-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.random-result {
+  margin-top: 10px;
+  width: 100%;
+}
+
+.class-dialog :deep(.el-dialog__header) {
+  border-bottom: 1px solid var(--color-border);
+  margin-right: 0;
+  padding-bottom: 14px;
+}
+
+@media (max-width: 768px) {
+  .class-row__actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
 }
 </style>

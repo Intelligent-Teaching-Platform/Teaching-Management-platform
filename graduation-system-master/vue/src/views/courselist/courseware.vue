@@ -9,7 +9,12 @@
               {{ courseName }}
             </span>
             <p class="course-subtitle">
-              面向 {{ courseName }} 课程，用于查看学生课后作业完成情况并进行在线批改与相似度分析
+              <template v-if="isStudentUser">
+                当前课程下属于你的课后作业与实验作业汇总；实验作业请点击后在「实验作业」中分段提交。
+              </template>
+              <template v-else>
+                面向 {{ courseName }} 课程，用于查看学生课后作业完成情况并进行在线批改与相似度分析
+              </template>
             </p>
           </div>
         </div>
@@ -26,7 +31,15 @@
             <el-radio-button label="未完成">未完成</el-radio-button>
           </el-radio-group>
         </div>
-        <div class="similarity-alert">
+        <div v-if="isStudentUser" class="similarity-alert">
+          <el-alert
+            title="课后作业提交会进行相似度分析，请独立完成；实验作业请切换到「实验作业」分页填写。"
+            type="info"
+            :closable="false"
+            show-icon
+          />
+        </div>
+        <div v-else class="similarity-alert">
           <el-alert
             title="所有提交内容会进行相似度分析，请同学保持独立完成"
             type="info"
@@ -45,7 +58,7 @@
             {{ (data.pageNum - 1) * data.pageSize + scope.$index + 1 }}
           </template>
         </el-table-column>
-        <el-table-column label="课后作业名称">
+        <el-table-column :label="isStudentUser ? '作业名称' : '课后作业名称'">
           <template #default="scope">
             <div class="assignment-cell">
               <div class="assignment-row-top">
@@ -62,10 +75,14 @@
               </div>
               <div v-if="scope.row.status === '未交'" class="status">{{ scope.row.state }}</div>
               <div v-else class="status completed">{{ scope.row.status }}</div>
-              <div>
+              <div class="assignment-tags">
+                <el-tag v-if="Number(scope.row.lab) === 2" type="info" size="small">实验作业</el-tag>
+                <el-tag v-else type="success" size="small">课后作业</el-tag>
                 <el-tag
-                    :type="parseFloat(scope.row.tip1) > 80 ? 'danger' :
-                        parseFloat(scope.row.tip1) > 50 ? 'warning' : 'success'"
+                  v-if="Number(scope.row.lab) !== 2"
+                  :type="parseFloat(scope.row.tip1) > 80 ? 'danger' :
+                    parseFloat(scope.row.tip1) > 50 ? 'warning' : 'success'"
+                  size="small"
                 >
                   {{ scope.row.tip1 ? `相似度: ${scope.row.tip1}` : '未分析' }}
                 </el-tag>
@@ -89,7 +106,7 @@
     >
       <el-form :model="data.form" label-width="100px" style="padding-right: 50px" >
         <el-form-item label="任务类型" prop="lab" disabled>
-          <el-input v-model="data.form.lab" autocomplete="off"  disabled="data.user.role === 'STUDENT'" />
+          <el-input v-model="data.form.lab" autocomplete="off" :disabled="isStudentUser" />
         </el-form-item>
         <div class="form-section">
           <el-form-item label="* 任务题目">
@@ -100,7 +117,7 @@
                 show-word-limit
                 maxlength="50"
                 placeholder="请输入任务题目"
-                :disabled="data.user.role === 'STUDENT'"
+                :disabled="isStudentUser"
             />
           </el-form-item>
           <div class="form-section">
@@ -112,7 +129,7 @@
                   show-word-limit
                   maxlength="500"
                   placeholder="请输入任务要求"
-                  :disabled="data.user.role === 'STUDENT'"
+                  :disabled="isStudentUser"
               />
             </el-form-item>
           </div>
@@ -138,13 +155,13 @@
             ></el-alert>
           </el-form-item>
         </div>
-        <el-form-item label="任务打分" prop="score" v-if="data.user.role === 'TEACHER'">
+        <el-form-item label="任务打分" prop="score" v-if="isTeacherUser">
           <el-input v-model="data.form.score" autocomplete="off"/>
         </el-form-item>
-        <el-form-item label="修改意见" prop="amendment" v-if="data.user.role === 'TEACHER'">
+        <el-form-item label="修改意见" prop="amendment" v-if="isTeacherUser">
           <el-input v-model="data.form.amendment" autocomplete="off"/>
         </el-form-item>
-        <el-form-item label="审核结果" prop="state" :rules="[{ required: true, message: '请选择审核是否通过', trigger: 'change' }]" v-if="data.user.role === 'TEACHER'">
+        <el-form-item label="审核结果" prop="state" :rules="[{ required: true, message: '请选择审核是否通过', trigger: 'change' }]" v-if="isTeacherUser">
           <el-select v-model="data.form.state" placeholder="审核是否通过">
             <el-option label="审核通过" value="审核通过"/>
             <el-option label="打回任务" value="未通过"/>
@@ -163,7 +180,7 @@
 
 <script setup>
 import { ref, computed, reactive, watch, nextTick } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import request from "@/utils/request";
 import { ElMessage, ElMessageBox, ElAlert } from "element-plus";
 import { Document, Filter, EditPen, User } from '@element-plus/icons-vue'
@@ -171,11 +188,13 @@ import cosineSimilarity from 'cosine-similarity';
 import { getUploadUrl } from '@/utils/appConfig'
 
 const route = useRoute();
+const router = useRouter();
 const courseName = computed(() => route.query.courseName || '作业');
 const courseId = computed(() => {
-  const id = route.query.id || route.params.id;
-  return id != null ? Number(id) : null;
+  const raw = route.query.id ?? route.params.id;
+  return raw != null && raw !== '' ? Number(raw) : null;
 });
+
 const data = reactive({
   pageNum: 1,
   pageSize: 100,
@@ -210,6 +229,18 @@ const data = reactive({
   },
 });
 
+/** 与后端/缓存中可能出现的 role 大小写差异对齐 */
+const isStudentUser = computed(() => String(data.user?.role ?? '').toUpperCase() === 'STUDENT');
+const isTeacherUser = computed(() => String(data.user?.role ?? '').toUpperCase() === 'TEACHER');
+
+function resolveLoginUserId() {
+  const u = data.user || {};
+  const raw = u.id ?? u.userId ?? u.studentId;
+  if (raw == null || raw === '') return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
 // 相似度分析相关状态
 const similarityScore = ref(0);
 const similarityAlertTitle = ref('相似度分析将在提交后进行');
@@ -223,16 +254,26 @@ const filteredAssignments = computed(() => {
   if (filterOption.value === '全部') {
     return data.tableData;
   } else if (filterOption.value === '已完成') {
-    return data.tableData.filter(item =>
+    return data.tableData.filter(item => {
+      if (Number(item.lab) === 2) {
+        return item.state === '审核通过';
+      }
+      return (
         (item.state === '' || item.state === null) &&
         (item.scontent && item.scontent.trim() !== '')
-    );
+      );
+    });
   } else if (filterOption.value === '未完成') {
-    return data.tableData.filter(item =>
+    return data.tableData.filter(item => {
+      if (Number(item.lab) === 2) {
+        return item.state !== '审核通过';
+      }
+      return (
         ((item.state === '' || item.state === null) &&
-            (item.scontent === '' || item.scontent === null)) ||
+          (item.scontent === '' || item.scontent === null)) ||
         ['未完成', '待提交', '待审核', '待修改', '未交'].includes(item.state)
-    );
+      );
+    });
   }
   return [];
 });
@@ -386,11 +427,18 @@ const load = async () => {
     let teacherId = null;
     let studentId = null;
     let classId = null;
-    if (data.user.role === "TEACHER") {
-      teacherId = data.user.id;
+    const loginId = resolveLoginUserId();
+
+    if (isTeacherUser.value) {
+      teacherId = loginId;
     }
-    if (data.user.role === "STUDENT") {
-      studentId = data.user.id;
+    if (isStudentUser.value) {
+      if (loginId == null) {
+        ElMessage.error('无法识别当前学生账号，请重新登录');
+        data.tableData = [];
+        return;
+      }
+      studentId = loginId;
       classId = data.user.classId;
     }
     const res = await request.get("/work/selectPageone", {
@@ -406,7 +454,12 @@ const load = async () => {
     });
 
     if (res && res.data) {
-      data.tableData = res.data.list || [];
+      let list = res.data.list || [];
+      if (isStudentUser.value && loginId != null) {
+        const sid = loginId;
+        list = list.filter((row) => Number(row.studentId) === sid);
+      }
+      data.tableData = list;
       data.total = res.data.total || 0;
     } else {
       console.error("请求数据失败，响应格式不符合预期");
@@ -436,8 +489,9 @@ const handleAdd = () => {
   };
 
   // 设置学生ID
-  if (data.user.role === "STUDENT") {
-    data.form.studentId = data.user.id;
+  if (isStudentUser.value) {
+    const sid = resolveLoginUserId();
+    if (sid != null) data.form.studentId = sid;
   }
 
   data.formVisible = true;
@@ -456,7 +510,14 @@ const onRowClick = (row) => {
 // 编辑
 const handleEdit = async (row) => {
   try {
-    console.log('点击学生姓名，row数据:', row);
+    // 实验作业在「实验作业」子页用分段表单；避免在本页用课后作业弹窗误改 tip1 等字段
+    if (isStudentUser.value && Number(row.lab) === 2) {
+      router.push({
+        path: '/course/courseDetail/homework/work',
+        query: { ...route.query },
+      });
+      return;
+    }
 
     // 验证数据完整性
     if (!row || !row.id) {
@@ -483,12 +544,8 @@ const handleEdit = async (row) => {
     // 复制所有属性到表单
     Object.assign(data.form, row);
 
-    // 确保表单字段映射正确
-    console.log('设置表单数据:', data.form);
-
     // 显示对话框
     data.formVisible = true;
-    console.log('表单可见性已设置为:', data.formVisible);
 
     // 如果已有内容，立即计算相似度
     if (data.form.scontent) {
@@ -555,7 +612,7 @@ const update = async () => {
     return;
   }
 
-  if (data.user.role === "STUDENT") {
+  if (isStudentUser.value) {
     data.form.state = "";
   }
 
@@ -712,6 +769,11 @@ load();
   padding: 0;
 }
 
+/* 表体单元格垂直居中，避免「学生」一栏相对行高偏上 */
+.homework-page :deep(.el-table__body td.el-table__cell) {
+  vertical-align: middle;
+}
+
 .assignment-row-top {
   display: flex;
   justify-content: space-between;
@@ -724,6 +786,13 @@ load();
 
 .assignment-cell {
   width: 100%;
+}
+
+.assignment-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
 }
 
 /* assignment-cell 用于撑满整列宽度 */
@@ -749,11 +818,23 @@ load();
   font-size: 12px;
 }
 
-/* 学生姓名样式（与作业标题一致，不再悬浮变色） */
+/* 学生姓名：图标与文字垂直居中 */
 .student-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
   cursor: pointer;
   color: #303133;
   font-weight: 500;
+}
+
+.student-name .inline-icon {
+  margin-right: 0;
+}
+
+.student-name :deep(.el-icon) {
+  font-size: 16px;
 }
 
 /* 表单样式优化 */

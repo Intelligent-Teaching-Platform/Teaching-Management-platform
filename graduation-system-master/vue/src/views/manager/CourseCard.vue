@@ -2,11 +2,13 @@
   <div class="course-card">
     <!-- 顶部大图区域 -->
     <div class="card-media">
-      <a href="javascript:void(0)" >
+      <a href="javascript:void(0)" @click.prevent="handleNavigate">
         <img
-          src="@/assets/imgs/CourseCard.jpg"
-          alt="Course Image"
+          :src="coverImageSrc"
+          :alt="coverImageAlt"
           class="course-image"
+          loading="lazy"
+          decoding="async"
         />
       </a>
       <!-- 左上角状态角标（学生端显示“学习中”） -->
@@ -52,7 +54,7 @@
           class="primary-btn"
           @click="handleNavigate"
         >
-          继续学习
+          {{ primaryBtnLabel }}
         </el-button>
       </div>
     </div>
@@ -62,6 +64,7 @@
 <script setup>
 import { defineProps, defineEmits, computed } from 'vue';
 import router from "@/router";
+import { getCoverUrlForCourse } from '@/utils/courseCoverPool'
 
 const props = defineProps({
   course: {
@@ -78,6 +81,17 @@ const props = defineProps({
 const displayTerm = computed(() => {
   const t = props.course?.term || props.term || ''
   return t.trim() || null
+})
+
+const primaryBtnLabel = computed(() =>
+  props.role === 'STUDENT' ? '继续学习' : '课程详情'
+)
+
+const coverImageSrc = computed(() => getCoverUrlForCourse(props.course?.id))
+
+const coverImageAlt = computed(() => {
+  const name = props.course?.name?.trim()
+  return name ? `课程封面：${name}` : '课程封面'
 })
 
 // 教师头像首字母
@@ -104,10 +118,10 @@ const handleDelete = async () => {
   emit('delete', props.course);
 };
 
-// 导航到课程详情页的方法
+// 进入课程后直达 AI 助教（与侧边栏「AI助教」路由一致，便于选中态正确）
 const handleNavigate = () => {
   router.push({
-    path: '/course/courseDetail',
+    path: '/course/courseDetail/ai',
     query: {
       id: props.course.id,
       courseName: props.course.name
@@ -138,9 +152,10 @@ const handleNavigate = () => {
 
 .course-image {
   width: 100%;
-  height: 120px;
+  height: 132px;
   object-fit: cover;
   display: block;
+  background: linear-gradient(135deg, #e8ecf7 0%, #f0f3fa 100%);
 }
 
 .status-badge {

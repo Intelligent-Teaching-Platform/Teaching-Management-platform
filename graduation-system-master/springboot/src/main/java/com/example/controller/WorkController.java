@@ -55,9 +55,12 @@ public class WorkController {
     @GetMapping("/selectPage")
     public Result selectPage(Work work,
                              @RequestParam(required = false) Integer courseId,
+                             @RequestParam(required = false) Integer studentId,
+                             @RequestParam(required = false) Integer teacherId,
                              @RequestParam(defaultValue = "1") Integer pageNum,
                              @RequestParam(defaultValue = "5") Integer pageSize)
     {
+        applyQueryUserIds(work, studentId, teacherId);
         PageInfo<Work> pageInfo = workService.selectPage(work, pageNum, pageSize, courseId);
         return Result.success(pageInfo);
     }
@@ -65,11 +68,27 @@ public class WorkController {
     @GetMapping("/selectPageone")
     public Result selectPageoen(Work work,
                              @RequestParam(required = false) Integer courseId,
+                             @RequestParam(required = false) Integer studentId,
+                             @RequestParam(required = false) Integer teacherId,
                              @RequestParam(defaultValue = "1") Integer pageNum,
                              @RequestParam(defaultValue = "5") Integer pageSize)
     {
+        applyQueryUserIds(work, studentId, teacherId);
         PageInfo<Work> pageInfo = workService.selectPageone(work, pageNum, pageSize, courseId);
         return Result.success(pageInfo);
+    }
+
+    /**
+     * 显式绑定 studentId/teacherId：部分环境下仅依赖 Work 表单绑定可能取不到查询参数，
+     * 会导致有 courseId 时误走「整课查询」从而把学生端清单变成全班数据。
+     */
+    private static void applyQueryUserIds(Work work, Integer studentId, Integer teacherId) {
+        if (studentId != null) {
+            work.setStudentId(studentId);
+        }
+        if (teacherId != null) {
+            work.setTeacherId(teacherId);
+        }
     }
     @DeleteMapping("/delete/{id}")
     public Result deleteById(@PathVariable Integer id) {

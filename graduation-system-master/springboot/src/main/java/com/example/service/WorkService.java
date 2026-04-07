@@ -117,9 +117,17 @@ public class WorkService {
             }
         }
 
-        list = list.stream()
-                .filter(w -> w.getLab() != null && w.getLab() == 1)
-                .collect(Collectors.toList());
+        // 学生：本页需同时看到课后作业(lab=1)与实验作业(lab=2)，且查询条件已按 studentId 限定为本学生
+        // 教师/管理员：仍仅展示课后作业(lab=1)
+        if (ObjectUtil.isNotEmpty(work.getStudentId())) {
+            list = list.stream()
+                    .filter(w -> w.getLab() != null && (w.getLab() == 1 || w.getLab() == 2))
+                    .collect(Collectors.toList());
+        } else {
+            list = list.stream()
+                    .filter(w -> w.getLab() != null && w.getLab() == 1)
+                    .collect(Collectors.toList());
+        }
         return PageInfo.of(list);
     }
 

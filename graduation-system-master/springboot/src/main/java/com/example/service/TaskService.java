@@ -63,8 +63,14 @@ public class TaskService {
                 }
             }
         } else {
-            // 管理员或其他角色，查所有任务
-            if (ObjectUtil.isNotEmpty(task.getName())) {
+            // 管理员、学生等：若带 courseId 则只查该课程（避免学生看到全校任务）
+            if (task.getCourseId() != null) {
+                if (ObjectUtil.isNotEmpty(task.getName())) {
+                    list = taskMapper.selectByCourseIdAndName(task.getCourseId(), task.getName());
+                } else {
+                    list = taskMapper.selectByCourseId(task.getCourseId());
+                }
+            } else if (ObjectUtil.isNotEmpty(task.getName())) {
                 list = taskMapper.selectByName(task.getName());
             } else {
                 list = taskMapper.selectAll();
