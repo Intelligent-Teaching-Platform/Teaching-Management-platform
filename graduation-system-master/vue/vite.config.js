@@ -14,7 +14,7 @@ import ElementPlus from 'unplugin-element-plus/vite'
 export default defineConfig({
   server: {
       open: '/',
-      port: 3000, // 项目端口（可自定义）
+      port: 4000, // 项目端口（可自定义）
     proxy: {
       '/files': {
         target: 'http://localhost:9090',

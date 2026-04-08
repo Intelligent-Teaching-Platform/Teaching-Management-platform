@@ -195,7 +195,7 @@
           </el-table>
         </el-card>
 
-        <el-card class="grid-block dash-card" shadow="never">
+        <el-card class="grid-block dash-card signin-pie-card" shadow="never">
           <template #header><div class="card-header">签到情况（饼图）</div></template>
 
           <div class="signin-pie-wrap">
@@ -225,7 +225,7 @@
                 <div class="signin-col-title">
                   未签到（{{ screen.right1?.unsignedCount ?? 0 }}）
                 </div>
-                <div class="signin-tags">
+                <div class="signin-tags signin-tags--unsigned">
                   <el-tag
                     v-for="n in unsignedNameList"
                     :key="n"
@@ -714,10 +714,30 @@ const renderPie = (chart, list, title) => {
     series: [
       {
         type: 'pie',
-        // 放大约 1.5 倍：35%->~52.5%，65%->~97.5%
-        radius: ['52%', '97%'],
-        center: ['50%', '45%'],
+        // 职称分布：略小的环，留白多一些（原 52%–97% 过满）
+        radius: ['38%', '68%'],
+        center: ['50%', '50%'],
         // 去掉连接线与标签状态
+        label: { show: false },
+        labelLine: { show: false },
+        emphasis: { scale: false },
+        data: list.map(i => ({ name: i.name, value: Number(i.value || 0) })),
+      },
+    ],
+  })
+}
+
+/** 教师端「签到」圆环：更小半径，不占满格子（与管理员职称饼图 renderPie 分离） */
+const renderSigninPie = (chart, list, title) => {
+  safeSet(chart, {
+    color: dashPalette,
+    title: { text: title, left: 'center', textStyle: chartTitleStyle },
+    tooltip: { trigger: 'item' },
+    series: [
+      {
+        type: 'pie',
+        radius: ['40%', '68%'],
+        center: ['50%', '50%'],
         label: { show: false },
         labelLine: { show: false },
         emphasis: { scale: false },
@@ -940,7 +960,7 @@ const loadTeacher = async () => {
       { name: '已签到', value: Number(screen.right1?.signedCount || 0) },
       { name: '未签到', value: Number(screen.right1?.unsignedCount || 0) },
     ]
-    renderPie(chartScreenRight1, pieData, '')
+    renderSigninPie(chartScreenRight1, pieData, '')
     renderLine(chartScreenRight3, screen.right3, '')
   } catch (error) {
     console.error('加载教师数据时发生错误:', error)
@@ -1022,6 +1042,7 @@ onBeforeUnmount(() => {
   --dash-row-short: min(292px, 33vh);
   --dash-row-tall: min(308px, 35vh);
   --dash-chart-h: 200px;
+  --dash-chart-pie-h: 172px;
   width: 100%;
   min-width: 0;
   display: flex;
@@ -1375,30 +1396,44 @@ onBeforeUnmount(() => {
 }
 
 .chart-panel--pie {
-  min-height: var(--dash-chart-h);
-  height: var(--dash-chart-h);
+  min-height: var(--dash-chart-pie-h);
+  height: var(--dash-chart-pie-h);
+}
+
+/* 签到卡：允许卡片 body 横向/纵向滚动，避免窄栅格把饼图压没、名单裁切 */
+.signin-pie-card :deep(.el-card__body) {
+  overflow-x: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .signin-pie-wrap {
   display: flex;
   gap: 14px;
-  width: 100%;
-  flex: 1;
-  min-height: 0;
   align-items: stretch;
+  flex: 0 0 auto;
+  width: max-content;
+  min-width: 100%;
+  max-width: none;
+  box-sizing: border-box;
   padding: 10px 2px;
 }
 
 .signin-chart {
-  flex: 1;
-  min-width: 0;
-  min-height: var(--dash-chart-h);
-  height: var(--dash-chart-h);
+  --signin-pie-size: min(148px, 36vw);
+  flex: 0 0 auto;
+  width: var(--signin-pie-size);
+  min-width: var(--signin-pie-size);
+  max-width: min(168px, 40vw);
+  min-height: var(--signin-pie-size);
+  height: var(--signin-pie-size);
 }
 
 .signin-names {
+  flex: 0 0 auto;
   width: 240px;
-  max-width: 40%;
+  min-width: 200px;
+  max-width: min(360px, 42vw);
   display: flex;
   gap: 14px;
   justify-content: space-between;
@@ -1436,6 +1471,51 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* 未签到：标签横向自动换行；过长姓名在标签内断行，不强行单行省略 */
+.signin-tags--unsigned {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 140px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.signin-tags--unsigned::-webkit-scrollbar {
+  width: 5px;
+}
+
+.signin-tags--unsigned::-webkit-scrollbar-track {
+  background: var(--color-primary-soft);
+  border-radius: 3px;
+}
+
+.signin-tags--unsigned::-webkit-scrollbar-thumb {
+  background: var(--color-primary-muted);
+  border-radius: 3px;
+}
+
+.signin-tags--unsigned :deep(.signin-tag) {
+  flex: 0 1 auto;
+  max-width: 100%;
+  height: auto !important;
+  min-height: 24px;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.45;
+}
+
+.signin-tags--unsigned :deep(.signin-tag .el-tag__content) {
+  white-space: normal;
+  word-break: break-word;
+  overflow: visible;
+  text-overflow: unset;
 }
 
 .signin-empty {
@@ -1620,6 +1700,7 @@ onBeforeUnmount(() => {
     --dash-row-short: min(268px, 48vh);
     --dash-row-tall: min(288px, 52vh);
     --dash-chart-h: 188px;
+    --dash-chart-pie-h: 156px;
   }
 
   .dashboard-hero {
