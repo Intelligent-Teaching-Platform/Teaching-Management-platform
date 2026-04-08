@@ -27,6 +27,10 @@
       <el-icon><Menu /></el-icon>
       <span>班级活动</span>
     </el-menu-item>
+     <el-menu-item v-if="data.user.role === 'TEACHER'" :index="menuPath('/course/courseDetail/scoreView')">
+      <el-icon><Stamp /></el-icon>
+      <span>成绩分析</span>
+    </el-menu-item>
     <el-menu-item :index="menuPath('/course/courseDetail/material')">
       <el-icon><Notebook /></el-icon>
       <span>课程资料</span>
@@ -60,10 +64,6 @@
     <el-menu-item v-if="data.user.role === 'TEACHER'" :index="menuPath('/course/courseDetail/testPaper')">
       <el-icon><DocumentAdd /></el-icon>
       <span>出卷</span>
-    </el-menu-item>
-    <el-menu-item v-if="data.user.role === 'TEACHER'" :index="menuPath('/course/courseDetail/scoreView')">
-      <el-icon><Stamp /></el-icon>
-      <span>批改</span>
     </el-menu-item>
     <el-menu-item v-if="data.user.role === 'TEACHER'" :index="menuPath('/course/courseDetail/question')">
       <el-icon><Collection /></el-icon>
