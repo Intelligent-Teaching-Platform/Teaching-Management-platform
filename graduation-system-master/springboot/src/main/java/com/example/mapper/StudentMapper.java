@@ -41,7 +41,7 @@ public interface StudentMapper {
 
     void batchInsert(List<Student> students);
 
-    @Select("select s.id,s.name from student s join choice on s.id = choice.student_id where choice.course_id = #{courseId}")
+    @Select("select s.id, s.name, s.username, s.code from student s join choice on s.id = choice.student_id where choice.course_id = #{courseId}")
     List<Student> selectByCourseId(Integer courseId);
 
     @Select("select * from student")

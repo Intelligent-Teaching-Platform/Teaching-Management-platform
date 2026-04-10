@@ -8,8 +8,11 @@ import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 公告信息业务层处理
@@ -19,14 +22,13 @@ public class TaskService {
     @Resource
     private TaskMapper taskMapper;
 
+    @Transactional
     public void add(Task task) {
         // 插入 task 表
         taskMapper.insert(task);
 
         // 获取插入后的 task id
         Integer taskId = task.getId();
-        // 获取 class_id
-        Integer classId = task.getClassId();
         // 获取 task 的 name、content、lab 和 teacher_id
         String name = task.getName();
         String content = task.getContent();
@@ -34,12 +36,39 @@ public class TaskService {
         Integer teacherId = task.getTeacherId();  // 获取 teacher_id 字段
         Integer courseId = task.getCourseId();    // 获取 course_id
 
-        // 根据 class_id 查询 student 表中的 id
-        List<Integer> studentIds = taskMapper.getStudentIdsByClassId(classId);
+        // 收集所有需要发放的班级ID（支持单班级和多班级）
+        Set<Integer> classIdSet = new HashSet<>();
+        
+        // 1. 处理单个班级ID
+        if (task.getClassId() != null) {
+            classIdSet.add(task.getClassId());
+        }
+        
+        // 2. 处理多个班级ID（逗号分隔，如 "1,2,3"）
+        if (task.getClassIds() != null && !task.getClassIds().trim().isEmpty()) {
+            String[] classIdArray = task.getClassIds().split(",");
+            for (String idStr : classIdArray) {
+                try {
+                    classIdSet.add(Integer.parseInt(idStr.trim()));
+                } catch (NumberFormatException e) {
+                    // 忽略无效的班级ID
+                }
+            }
+        }
 
-        // 将对应的 student_id、task_id、name、content、lab 和 teacher_id 插入到 work 表
-        for (Integer studentId : studentIds) {
-            taskMapper.insertIntoWork(taskId, studentId, name, content, lab, teacherId, courseId);
+        // 3. 查询所有班级下的学生ID，并去重
+        Set<Integer> uniqueStudentIds = new HashSet<>();
+        for (Integer classId : classIdSet) {
+            List<Integer> studentIds = taskMapper.getStudentIdsByClassId(classId);
+            uniqueStudentIds.addAll(studentIds);
+        }
+
+        // 4. 将对应的 student_id、task_id、name、content、lab 和 teacher_id 插入到 work 表
+        for (Integer studentId : uniqueStudentIds) {
+            // 检查是否已存在相同的 task_id 和 student_id 记录，避免重复插入
+            if (!taskMapper.existsWorkByTaskIdAndStudentId(taskId, studentId)) {
+                taskMapper.insertIntoWork(taskId, studentId, name, content, lab, teacherId, courseId);
+            }
         }
     }
 
@@ -79,14 +108,13 @@ public class TaskService {
         return PageInfo.of(list);
     }
 
+    @Transactional
     public void updateByID(Task task) {
         // 更新 task 表
         taskMapper.updateById(task);
 
         // 获取 task id
         Integer taskId = task.getId();
-        // 获取 class_id
-        Integer classId = task.getClassId();
         // 获取 task 的 name、content、lab 和 teacher_id
         String name = task.getName();
         String content = task.getContent();
@@ -94,11 +122,36 @@ public class TaskService {
         Integer teacherId = task.getTeacherId();  // 获取 teacher_id 字段
         Integer courseId = task.getCourseId();
 
-        // 根据 class_id 查询 student 表中的 id
-        List<Integer> studentIds = taskMapper.getStudentIdsByClassId(classId);
+        // 收集所有需要更新的班级ID（支持单班级和多班级）
+        Set<Integer> classIdSet = new HashSet<>();
+        
+        // 1. 处理单个班级ID
+        if (task.getClassId() != null) {
+            classIdSet.add(task.getClassId());
+        }
+        
+        // 2. 处理多个班级ID（逗号分隔，如 "1,2,3"）
+        if (task.getClassIds() != null && !task.getClassIds().trim().isEmpty()) {
+            String[] classIdArray = task.getClassIds().split(",");
+            for (String idStr : classIdArray) {
+                try {
+                    classIdSet.add(Integer.parseInt(idStr.trim()));
+                } catch (NumberFormatException e) {
+                    // 忽略无效的班级ID
+                }
+            }
+        }
 
-        // 更新 work 表中与 task_id 对应的所有字段
-        for (Integer studentId : studentIds) {
+        // 3. 查询所有班级下的学生ID，并去重
+        Set<Integer> uniqueStudentIds = new HashSet<>();
+        for (Integer classId : classIdSet) {
+            List<Integer> studentIds = taskMapper.getStudentIdsByClassId(classId);
+            uniqueStudentIds.addAll(studentIds);
+        }
+
+        // 4. 更新 work 表中与 task_id 对应的所有字段（如果不存在则插入）
+        for (Integer studentId : uniqueStudentIds) {
+            // 使用 INSERT ... ON DUPLICATE KEY UPDATE 确保新学生也能创建记录
             taskMapper.updateWorkAllFields(taskId, studentId, name, content, lab, teacherId, courseId);
         }
     }
@@ -123,5 +176,9 @@ public class TaskService {
 
     public List<Task> selectAll() {
         return taskMapper.selectAll();
+    }
+
+    public Task selectById(Integer id) {
+        return taskMapper.selectById(id);
     }
 }

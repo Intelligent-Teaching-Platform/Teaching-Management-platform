@@ -12,7 +12,7 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(config => {
     // 1. 自动添加 Token
-    const token = localStorage.getItem('token') // 假设token存储在localStorage
+    const token = localStorage.getItem('system-token') // 假设token存储在localStorage
     if (token) {
         config.headers['Authorization'] = `Bearer ${token}`
     }

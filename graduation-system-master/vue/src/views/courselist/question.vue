@@ -332,7 +332,12 @@ function parsePaperFormat(text) {
 
     // 检测题型 - 支持多种格式
     let typeId = null
-    let typeMatch = trimmed.match(/（([单判多]选题)）/)
+    // 先尝试匹配带括号的题型标记（单选题/判断题/多选题）
+    let typeMatch = trimmed.match(/[（(](单选题|判断题|多选题)[)）]/)
+    if (!typeMatch) {
+      // 再尝试匹配不带括号的题型标记
+      typeMatch = trimmed.match(/(单选题|判断题|多选题)/)
+    }
     if (typeMatch) {
       const typeStr = typeMatch[1]
       if (typeStr === '单选题') typeId = 1
@@ -343,29 +348,31 @@ function parsePaperFormat(text) {
       }
     } else {
       // 如果没有明确标注题型，根据选项判断
-      const hasOptions = /[A-D][\.．、)\s]/.test(trimmed)
-      if (hasOptions) {
-        typeId = 1 // 默认为单选题
+      // 判断题通常只有正确/错误两种答案，不会有A/B/C/D选项
+      const hasChoiceOptions = /[A-D][\.．、)\s][^正确错误]/.test(trimmed)
+      if (hasChoiceOptions) {
+        typeId = 1 // 有ABCD选项，默认为单选题
       } else {
-        typeId = 2 // 没有选项默认为判断题
+        typeId = 2 // 没有ABCD选项，默认为判断题
       }
     }
 
     // 提取题目内容（去除题号和题型标记）
     let questionText = trimmed
       .replace(/^(\*\*)?\d+[\.．、](\*\*)?\s*/, '') // 去除题号
-      .replace(/\*\*（([单判多]选题)）\*\*/g, '') // 去除题型标记（可能有**包裹）
-      .replace(/（([单判多]选题)）/, '') // 去除题型标记
+      .replace(/\*\*[（(](单选题|判断题|多选题)[)）]\*\*/g, '') // 去除带**包裹的题型标记
+      .replace(/[（(](单选题|判断题|多选题)[)）]/g, '') // 去除题型标记
       .trim()
     
-    // 提取选项
-    const optionMatches = [...trimmed.matchAll(/([A-D])[\.．、)\s]\s*(\S[^\n]*)/g)]
+    // 提取选项（只在题型为单选题时提取）
     const options = {}
-
-    for (const match of optionMatches) {
-      const letter = match[1]
-      const content = match[2].trim().replace(/^\*\*/, '').replace(/\*\*$/, '') // 去除可能的**
-      options[letter] = content
+    if (typeId === 1) {
+      const optionMatches = [...trimmed.matchAll(/([A-D])[\.．、)\s]\s*(\S[^\n]*)/g)]
+      for (const match of optionMatches) {
+        const letter = match[1]
+        const content = match[2].trim().replace(/^\*\*/, '').replace(/\*\*$/, '') // 去除可能的**
+        options[letter] = content
+      }
     }
 
     // 清理题目文本中的选项部分

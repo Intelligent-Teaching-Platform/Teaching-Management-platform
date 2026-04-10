@@ -77,4 +77,16 @@ public class TaskController {
         return Result.success(list);
     }
 
+    /**
+     * 根据ID查询任务详情
+     */
+    @GetMapping("/selectById/{id}")
+    public Result selectById(@PathVariable Integer id) {
+        Task task = taskService.selectById(id);
+        if (task == null) {
+            return Result.error("任务不存在");
+        }
+        return Result.success(task);
+    }
+
 }

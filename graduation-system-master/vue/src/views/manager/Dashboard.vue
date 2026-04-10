@@ -633,8 +633,20 @@ function teardownDashAutoScrolls() {
   dashAutoScrollTeardowns = []
 }
 
-function bindAutoVerticalScroll(el, speed = 0.38) {
-  if (!el || el.nodeType !== 1) return () => {}
+function bindAutoVerticalScroll(el, speed = 0.18) {
+  if (!el || el.nodeType !== 1) return null
+  
+  // 检查是否有滚动条（内容高度大于容器高度）
+  const sh = el.scrollHeight
+  const ch = el.clientHeight
+  if (sh <= ch + 2) {
+    // 没有滚动条，不需要自动滚动
+    console.log('Auto scroll skipped: no overflow', el.className, 'scrollHeight:', sh, 'clientHeight:', ch)
+    return null
+  }
+  
+  console.log('Auto scroll enabled:', el.className, 'scrollHeight:', sh, 'clientHeight:', ch)
+  
   let raf = 0
   let paused = false
   let stopped = false
@@ -678,12 +690,20 @@ function bindAutoVerticalScroll(el, speed = 0.38) {
 async function setupDashAutoScrolls() {
   teardownDashAutoScrolls()
   await nextTick()
-  await new Promise((r) => requestAnimationFrame(() => r()))
+  // 延迟一点确保 DOM 完全渲染
+  await new Promise((r) => setTimeout(r, 500))
   const nodes = []
   if (role === 'ADMIN') {
     if (adminProgressScrollEl.value) nodes.push(adminProgressScrollEl.value)
-    if (adminCourseOverviewScrollEl.value) nodes.push(adminCourseOverviewScrollEl.value)
-    if (adminRecentWorkScrollEl.value) nodes.push(adminRecentWorkScrollEl.value)
+    // el-table 的滚动在 .el-table__body-wrapper 上
+    if (adminCourseOverviewScrollEl.value) {
+      const tableWrapper = adminCourseOverviewScrollEl.value.querySelector('.el-table__body-wrapper')
+      if (tableWrapper) nodes.push(tableWrapper)
+    }
+    if (adminRecentWorkScrollEl.value) {
+      const tableWrapper = adminRecentWorkScrollEl.value.querySelector('.el-table__body-wrapper')
+      if (tableWrapper) nodes.push(tableWrapper)
+    }
     if (adminRadarScrollEl.value) nodes.push(adminRadarScrollEl.value)
   }
   if (role === 'TEACHER') {
@@ -693,9 +713,13 @@ async function setupDashAutoScrolls() {
     if (signinSignedScrollEl.value) nodes.push(signinSignedScrollEl.value)
     if (signinUnsignedScrollEl.value) nodes.push(signinUnsignedScrollEl.value)
   }
+  console.log('Setting up auto scroll for', nodes.length, 'elements')
   nodes.forEach((el) => {
     const off = bindAutoVerticalScroll(el)
-    if (off) dashAutoScrollTeardowns.push(off)
+    if (off) {
+      dashAutoScrollTeardowns.push(off)
+      console.log('Auto scroll bound to:', el.className)
+    }
   })
 }
 
@@ -1419,9 +1443,12 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 8px;
   padding-right: 6px;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   min-height: 0;
-  overflow: visible;
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
 .progress-meta {
@@ -1468,7 +1495,7 @@ onBeforeUnmount(() => {
 }
 
 .dash-scroll-y {
-  max-height: min(240px, 32vh);
+  max-height: 260px;
   overflow-y: auto;
   overflow-x: hidden;
   flex: 1 1 auto;
@@ -1498,17 +1525,18 @@ onBeforeUnmount(() => {
   min-height: 0;
 }
 
-/* 雷达图：外层限制高度 + 内层略高，产生纵向滚动并与其它卡片一致的自动滚动 */
+/* 雷达图：固定高度，不产生滚动条 */
 .dash-radar-chart-scroll {
   width: 100%;
   flex: 1 1 auto;
   min-height: 0;
+  overflow: hidden;
 }
 
 .chart.dash-radar-chart-inner {
   flex: none;
-  min-height: min(320px, 32vh);
-  height: min(320px, 32vh);
+  min-height: 240px;
+  height: 240px;
 }
 
 .progress-list::-webkit-scrollbar {
@@ -1559,27 +1587,26 @@ onBeforeUnmount(() => {
   height: var(--dash-chart-pie-h);
 }
 
-/* 签到卡：列表由内层 dash-scroll-y 自动滚动；横向极窄时再允许横向拖动 */
+/* 签到卡：列表由内层 dash-scroll-y 自动滚动；禁止横向滚动 */
 .signin-pie-card :deep(.el-card__body) {
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
 }
 
 .signin-pie-card.dash-card--scroll-inner :deep(.el-card__body) {
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: hidden;
 }
 
 .signin-pie-wrap {
   display: flex;
-  gap: 14px;
+  gap: 12px;
   align-items: flex-start;
   flex: 1 1 auto;
   min-height: 0;
-  width: max-content;
-  min-width: 100%;
-  max-width: none;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   box-sizing: border-box;
   padding: 10px 2px;
 }
@@ -1595,19 +1622,21 @@ onBeforeUnmount(() => {
 }
 
 .signin-names {
-  flex: 0 1 auto;
-  min-width: 200px;
-  max-width: min(360px, 42vw);
-  width: 140px;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+  width: auto;
   display: flex;
-  gap: 14px;
-  justify-content: space-between;
+  gap: 12px;
+  justify-content: flex-start;
   min-height: 0;
+  overflow: hidden;
 }
 
 .signin-col {
-  flex: 1;
+  flex: 1 1 0;
   min-width: 0;
+  max-width: none;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -1632,11 +1661,11 @@ onBeforeUnmount(() => {
   overflow: visible;
 }
 
-/* 签到名单：标题固定，仅此处纵向滚动；一名一行 */
+/* 签到名单：标题固定，仅此处纵向滚动；每行两个 */
 .signin-tags.signin-tags--list {
-  flex-direction: column;
-  flex-wrap: nowrap;
-  align-items: stretch;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
   align-content: flex-start;
   flex: 1 1 auto;
   min-height: 0;
@@ -1650,16 +1679,19 @@ onBeforeUnmount(() => {
 }
 
 .signin-tags.signin-tags--list :deep(.signin-tag) {
-  width: 80%;
+  flex: 0 0 calc(50% - 3px);
+  width: calc(50% - 3px);
   max-width: none;
   height: auto !important;
-  min-height: 28px;
+  min-height: 26px;
   margin: 0;
-  justify-content: flex-start;
+  justify-content: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   box-sizing: border-box;
+  font-size: 11px;
+  padding: 0 4px;
 }
 
 .signin-tags.signin-tags--list :deep(.signin-tag .el-tag__content) {

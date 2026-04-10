@@ -20,14 +20,20 @@
     <div class="manager-body">
       <component :is="currentSidebar" />
       <main class="manager-main" id="main-content" role="main">
-        <router-view @update-user="updateUser" />
+        <router-view v-slot="{ Component }">
+          <transition name="fade" mode="out-in">
+            <keep-alive :include="cachedViews">
+              <component :is="Component" :key="route.fullPath" @update-user="updateUser" />
+            </keep-alive>
+          </transition>
+        </router-view>
       </main>
     </div>
   </div>
 </template>
 
 <script setup>
-import { reactive, computed } from 'vue'
+import { reactive, computed, ref } from 'vue'
 import router from '@/router'
 import { ElMessage } from 'element-plus'
 import { useRoute } from 'vue-router'
@@ -44,6 +50,29 @@ const isCourseDetail = computed(() => route.path.startsWith('/course/courseDetai
 
 const currentSidebar = computed(() => (isCourseDetail.value ? CourseSidebar : DefaultSidebar))
 
+// 需要缓存的页面名称列表
+const cachedViews = ref([
+  'Home',
+  'Dashboard',
+  'Admin',
+  'Teacher',
+  'Student',
+  'Course',
+  'Notice',
+  'College',
+  'Clazz',
+  'Choice',
+  'StuCourse',
+  'MyCourse',
+  'MyTeach',
+  'Person',
+  'TPerson',
+  'SPerson',
+  'Password',
+  'Account',
+  'Resource'
+])
+
 const data = reactive({
   user: JSON.parse(localStorage.getItem('system-user') || '{}'),
 })
@@ -57,3 +86,26 @@ const updateUser = () => {
   data.user = JSON.parse(localStorage.getItem('system-user') || '{}')
 }
 </script>
+
+<style scoped>
+/* 页面切换过渡动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: translateX(10px);
+}
+
+/* 确保主内容区域最小高度，避免空白 */
+.manager-main {
+  min-height: calc(100vh - 60px);
+}
+</style>

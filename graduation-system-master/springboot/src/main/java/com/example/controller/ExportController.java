@@ -2,10 +2,14 @@ package com.example.controller;
 
 import com.example.entity.Score;
 import com.example.entity.Clazz;
+import com.example.entity.SignIn;
+import com.example.entity.SignInRecord;
 import com.example.entity.Student;
 import com.example.entity.Work;
 import com.example.mapper.ScoreMapper;
 import com.example.mapper.ClazzMapper;
+import com.example.mapper.SignInMapper;
+import com.example.mapper.SignInRecordMapper;
 import com.example.mapper.StudentMapper;
 import com.example.mapper.WorkMapper;
 import com.example.service.ExperimentReportService;
@@ -48,6 +52,10 @@ public class ExportController {
     private StudentMapper studentMapper;
     @Resource
     private ClazzMapper clazzMapper;
+    @Resource
+    private SignInMapper signInMapper;
+    @Resource
+    private SignInRecordMapper signInRecordMapper;
 
     private static final DateTimeFormatter DT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -84,12 +92,16 @@ public class ExportController {
         List<Work> lab1Works = works.stream().filter(w -> w.getLab() != null && w.getLab() == 1).collect(Collectors.toList());
         List<Work> lab2Works = works.stream().filter(w -> w.getLab() != null && w.getLab() == 2).collect(Collectors.toList());
 
+        // 4) 签到记录（该课程）
+        List<SignIn> signIns = Optional.ofNullable(signInMapper.selectByCourseId(courseId)).orElseGet(List::of);
+        List<SignInRecord> signInRecords = Optional.ofNullable(signInRecordMapper.selectByCourseId(courseId)).orElseGet(List::of);
+
         try (Workbook wb = new XSSFWorkbook()) {
             writeScoresSheet(wb.createSheet("试卷成绩"), scores);
             writeWorkSheet(wb.createSheet("课后作业"), lab1Works, false);
             writeWorkSheet(wb.createSheet("实验作业"), lab2Works, true);
             writeExperimentReportSheet(wb.createSheet("实验报告"), lab2Works);
-            writeSummarySheet(wb.createSheet("成绩汇总"), students, scores, lab1Works, lab2Works);
+            writeSummarySheet(wb.createSheet("成绩汇总"), students, scores, lab1Works, lab2Works, signIns, signInRecords);
 
             wb.write(response.getOutputStream());
             response.getOutputStream().flush();
@@ -255,17 +267,18 @@ public class ExportController {
                                    List<Student> students,
                                    List<Score> scores,
                                    List<Work> lab1Works,
-                                   List<Work> lab2Works) {
+                                   List<Work> lab2Works,
+                                   List<SignIn> signIns,
+                                   List<SignInRecord> signInRecords) {
         int r = 0;
         Row header = sheet.createRow(r++);
         String[] cols = {
-                "学生ID", "学生姓名",
-                "试卷次数", "试卷平均分",
-                "课后作业次数", "课后作业平均分",
-                "实验作业次数", "实验作业平均分"
+                "学号", "姓名",
+                "签到分(满分10)", "考试分(满分40)", "作业分(满分50)", "总分(满分100)"
         };
         for (int i = 0; i < cols.length; i++) header.createCell(i).setCellValue(cols[i]);
 
+        // 按学生分组统计
         Map<Integer, List<Score>> scoreByStu = scores.stream()
                 .filter(s -> s.getStudentId() != null)
                 .collect(Collectors.groupingBy(Score::getStudentId));
@@ -277,24 +290,52 @@ public class ExportController {
                 .filter(w -> w.getStudentId() != null)
                 .collect(Collectors.groupingBy(Work::getStudentId));
 
+        // 签到记录按学生分组（只统计成功的签到）
+        Map<Integer, List<SignInRecord>> signInByStu = signInRecords.stream()
+                .filter(sr -> sr.getStudentId() != null && "SUCCESS".equals(sr.getStatus()))
+                .collect(Collectors.groupingBy(SignInRecord::getStudentId));
+
+        // 教师发布的签到总数
+        int totalSignIns = signIns.size();
+
         for (Student stu : students) {
             Integer sid = stu.getId();
             Row row = sheet.createRow(r++);
             int c = 0;
-            row.createCell(c++).setCellValue(nvl(sid));
+
+            // 学号、姓名（优先使用 username，如果没有则使用 code）
+            String studentCode = stu.getUsername() != null && !stu.getUsername().isEmpty() ? stu.getUsername() : stu.getCode();
+            row.createCell(c++).setCellValue(nvlStr(studentCode));
             row.createCell(c++).setCellValue(nvlStr(stu.getName()));
 
+            // 签到分：成功签到次数/教师发布签到次数 * 10
+            int successSignInCount = signInByStu.getOrDefault(sid, List.of()).size();
+            double signInScore = totalSignIns > 0 ? Math.round((successSignInCount * 10.0 / totalSignIns) * 10.0) / 10.0 : 0.0;
+            Cell signInCell = row.createCell(c++);
+            signInCell.setCellValue(signInScore);
+
+            // 考试分：所有考试平均得分/100 * 40
             List<Score> sList = scoreByStu.getOrDefault(sid, List.of());
-            row.createCell(c++).setCellValue(sList.size());
-            row.createCell(c++).setCellValue(avgDouble(sList.stream().map(Score::getScore).collect(Collectors.toList())));
+            double examAvgScore = avgDouble(sList.stream().map(Score::getScore).collect(Collectors.toList()));
+            double examScore = Math.round((examAvgScore / 100.0 * 40.0) * 10.0) / 10.0;
+            Cell examCell = row.createCell(c++);
+            examCell.setCellValue(examScore);
 
+            // 作业分：所有作业（课后+实验）平均得分/100 * 50
             List<Work> w1 = lab1ByStu.getOrDefault(sid, List.of());
-            row.createCell(c++).setCellValue(w1.size());
-            row.createCell(c++).setCellValue(avgInt(w1.stream().map(Work::getScore).collect(Collectors.toList())));
-
             List<Work> w2 = lab2ByStu.getOrDefault(sid, List.of());
-            row.createCell(c++).setCellValue(w2.size());
-            row.createCell(c++).setCellValue(avgInt(w2.stream().map(Work::getScore).collect(Collectors.toList())));
+            List<Integer> allWorkScores = new ArrayList<>();
+            allWorkScores.addAll(w1.stream().map(Work::getScore).filter(Objects::nonNull).collect(Collectors.toList()));
+            allWorkScores.addAll(w2.stream().map(Work::getScore).filter(Objects::nonNull).collect(Collectors.toList()));
+            double workAvgScore = avgInt(allWorkScores);
+            double workScore = Math.round((workAvgScore / 100.0 * 50.0) * 10.0) / 10.0;
+            Cell workCell = row.createCell(c++);
+            workCell.setCellValue(workScore);
+
+            // 总分
+            double totalScore = Math.round((signInScore + examScore + workScore) * 10.0) / 10.0;
+            Cell totalCell = row.createCell(c++);
+            totalCell.setCellValue(totalScore);
         }
         autosize(sheet, cols.length);
     }

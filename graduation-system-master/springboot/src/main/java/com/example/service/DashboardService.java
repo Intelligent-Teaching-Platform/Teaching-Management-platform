@@ -175,18 +175,30 @@ public class DashboardService {
         List<Map<String, Object>> series = new ArrayList<>();
         for (Map<String, Object> s : students) {
             Integer sid = ((Number) s.get("studentId")).intValue();
+            // 签到分：满分10，成功签到次数/教师发布签到次数 * 10
             double signPoint = (totalSignIns == null || totalSignIns == 0)
                     ? 0d
                     : 10d * (attendMap.getOrDefault(sid, 0) * 1.0d / totalSignIns);
-            double examPoint = 10d * (examAvgMap.getOrDefault(sid, 0d) / 100d);
-            double workPoint = 10d * (workAvgMap.getOrDefault(sid, 0d) / 100d);
+            // 考试分：满分40，所有考试平均得分/100 * 40
+            double examPoint = 40d * (examAvgMap.getOrDefault(sid, 0d) / 100d);
+            // 作业分：满分50，所有作业平均得分/100 * 50
+            double workPoint = 50d * (workAvgMap.getOrDefault(sid, 0d) / 100d);
 
             double total = signPoint + examPoint + workPoint;
             Map<String, Object> item = new HashMap<>();
             item.put("studentId", sid);
             item.put("studentName", s.get("studentName"));
             item.put("code", s.get("code"));
-            item.put("values", List.of(round1(signPoint), round1(examPoint), round1(workPoint)));
+            // 雷达图显示归一化到10分制用于可视化对比
+            item.put("values", List.of(
+                round1(signPoint),           // 签到满分10
+                round1(examPoint * 10 / 40), // 考试满分40，归一化到10
+                round1(workPoint * 10 / 50)  // 作业满分50，归一化到10
+            ));
+            // 实际得分
+            item.put("signScore", round1(signPoint));
+            item.put("examScore", round1(examPoint));
+            item.put("workScore", round1(workPoint));
             item.put("total", round1(total));
             series.add(item);
         }
@@ -198,7 +210,7 @@ public class DashboardService {
 
         return Map.of(
                 "courseId", courseId,
-                "indicators", List.of("签到", "考试", "作业"),
+                "indicators", List.of("签到(10分)", "考试(40分)", "作业(50分)"),
                 "series", series
         );
     }

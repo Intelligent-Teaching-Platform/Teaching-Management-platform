@@ -55,6 +55,9 @@
             <if test="score != null">
                 score = #{score},
             </if>
+            <if test="answer != null">
+                answer = #{answer},
+            </if>
             <if test="status != null">
                 status = #{status},
             </if>

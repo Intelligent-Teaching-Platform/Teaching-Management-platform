@@ -7,11 +7,11 @@
 
     <insert id="insert" parameterType="com.example.entity.Clazz" useGeneratedKeys="true">
         insert into clazz(id,name, teacher_id, create_time)
-        values (#{id}, #{name}, #{teachaerId}, #{createTime})
+        values (#{id}, #{name}, #{teacherId}, #{createTime})
     </insert>
 
     <update id="updateById" parameterType="com.example.entity.Clazz">
-        update clazz set name = #{name}, teacher_id = #{teachaerId}, create_time = #{createTime}
+        update clazz set name = #{name}, teacher_id = #{teacherId}, create_time = #{createTime}
         where id = #{id}
     </update>
 

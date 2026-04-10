@@ -42,6 +42,16 @@ public interface TaskMapper {
             "LEFT JOIN clazz c ON t.class_id = c.id " +
             "WHERE t.class_id = #{classId} " +
             "ORDER BY t.id DESC")
+    @Results({
+        @Result(property = "experimentContents", column = "experiment_contents"),
+        @Result(property = "experimentSteps", column = "experiment_steps"),
+        @Result(property = "experimentTime", column = "experiment_time"),
+        @Result(property = "experimentContent", column = "experiment_content"),
+        @Result(property = "experimentPurpose", column = "experiment_purpose"),
+        @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "classIds", column = "class_ids"),
+        @Result(property = "classNames", column = "class_names")
+    })
     List<Task> selectByClassId(@Param("classId") Integer classId);
 
     /**
@@ -51,24 +61,64 @@ public interface TaskMapper {
             "LEFT JOIN clazz c ON t.class_id = c.id " +
             "WHERE t.course_id = #{courseId} AND t.class_id = #{classId} " +
             "ORDER BY t.id DESC")
+    @Results({
+        @Result(property = "experimentContents", column = "experiment_contents"),
+        @Result(property = "experimentSteps", column = "experiment_steps"),
+        @Result(property = "experimentTime", column = "experiment_time"),
+        @Result(property = "experimentContent", column = "experiment_content"),
+        @Result(property = "experimentPurpose", column = "experiment_purpose"),
+        @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "classIds", column = "class_ids"),
+        @Result(property = "classNames", column = "class_names")
+    })
     List<Task> selectByCourseIdAndClassId(@Param("courseId") Integer courseId, @Param("classId") Integer classId);
 
     @Select("SELECT t.*, c.name as className FROM task t " +
             "LEFT JOIN clazz c ON t.class_id = c.id " +
             "WHERE t.course_id = #{courseId} AND t.class_id = #{classId} AND t.name LIKE CONCAT('%', #{name}, '%') " +
             "ORDER BY t.id DESC")
+    @Results({
+        @Result(property = "experimentContents", column = "experiment_contents"),
+        @Result(property = "experimentSteps", column = "experiment_steps"),
+        @Result(property = "experimentTime", column = "experiment_time"),
+        @Result(property = "experimentContent", column = "experiment_content"),
+        @Result(property = "experimentPurpose", column = "experiment_purpose"),
+        @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "classIds", column = "class_ids"),
+        @Result(property = "classNames", column = "class_names")
+    })
     List<Task> selectByCourseIdAndClassIdAndName(@Param("courseId") Integer courseId, @Param("classId") Integer classId, @Param("name") String name);
 
     @Select("SELECT t.*, c.name as className FROM task t " +
             "LEFT JOIN clazz c ON t.class_id = c.id " +
             "WHERE t.teacher_id = #{teacherId} AND t.course_id = #{courseId} AND t.class_id = #{classId} " +
             "ORDER BY t.id DESC")
+    @Results({
+        @Result(property = "experimentContents", column = "experiment_contents"),
+        @Result(property = "experimentSteps", column = "experiment_steps"),
+        @Result(property = "experimentTime", column = "experiment_time"),
+        @Result(property = "experimentContent", column = "experiment_content"),
+        @Result(property = "experimentPurpose", column = "experiment_purpose"),
+        @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "classIds", column = "class_ids"),
+        @Result(property = "classNames", column = "class_names")
+    })
     List<Task> selectByTeacherIdAndCourseIdAndClassId(@Param("teacherId") Integer teacherId, @Param("courseId") Integer courseId, @Param("classId") Integer classId);
 
     @Select("SELECT t.*, c.name as className FROM task t " +
             "LEFT JOIN clazz c ON t.class_id = c.id " +
             "WHERE t.teacher_id = #{teacherId} AND t.course_id = #{courseId} AND t.class_id = #{classId} AND t.name LIKE CONCAT('%', #{name}, '%') " +
             "ORDER BY t.id DESC")
+    @Results({
+        @Result(property = "experimentContents", column = "experiment_contents"),
+        @Result(property = "experimentSteps", column = "experiment_steps"),
+        @Result(property = "experimentTime", column = "experiment_time"),
+        @Result(property = "experimentContent", column = "experiment_content"),
+        @Result(property = "experimentPurpose", column = "experiment_purpose"),
+        @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "classIds", column = "class_ids"),
+        @Result(property = "classNames", column = "class_names")
+    })
     List<Task> selectByTeacherIdAndCourseIdAndClassIdAndName(@Param("teacherId") Integer teacherId, @Param("courseId") Integer courseId, @Param("classId") Integer classId, @Param("name") String name);
 
     /**
@@ -82,41 +132,136 @@ public interface TaskMapper {
             "WHERE t.course_id = #{courseId} " +
             "GROUP BY t.id " +
             "ORDER BY t.id DESC")
+    @Results({
+        @Result(property = "experimentContents", column = "experiment_contents"),
+        @Result(property = "experimentSteps", column = "experiment_steps"),
+        @Result(property = "experimentTime", column = "experiment_time"),
+        @Result(property = "experimentContent", column = "experiment_content"),
+        @Result(property = "experimentPurpose", column = "experiment_purpose"),
+        @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "classIds", column = "class_ids"),
+        @Result(property = "classNames", column = "class_names")
+    })
     List<Task> selectByCourseIdWithClasses(@Param("courseId") Integer courseId);
 
     @Select("select t.*, c.name as className from task t " +
             "left join clazz c on t.class_id = c.id " +
             "order by t.id desc")
+    @Results({
+        @Result(property = "experimentContents", column = "experiment_contents"),
+        @Result(property = "experimentSteps", column = "experiment_steps"),
+        @Result(property = "experimentTime", column = "experiment_time"),
+        @Result(property = "experimentContent", column = "experiment_content"),
+        @Result(property = "experimentPurpose", column = "experiment_purpose"),
+        @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "classIds", column = "class_ids"),
+        @Result(property = "classNames", column = "class_names")
+    })
     List<Task> selectAll();
+
+    @Select("select t.*, c.name as clazzName from task t " +
+            "left join clazz c on t.class_id = c.id " +
+            "where t.id = #{id}")
+    @Results({
+        @Result(property = "experimentContents", column = "experiment_contents"),
+        @Result(property = "experimentSteps", column = "experiment_steps"),
+        @Result(property = "experimentTime", column = "experiment_time"),
+        @Result(property = "experimentContent", column = "experiment_content"),
+        @Result(property = "experimentPurpose", column = "experiment_purpose"),
+        @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "classIds", column = "class_ids"),
+        @Result(property = "classNames", column = "class_names"),
+        @Result(property = "q1", column = "q1"),
+        @Result(property = "q2", column = "q2"),
+        @Result(property = "q3", column = "q3"),
+        @Result(property = "q4", column = "q4"),
+        @Result(property = "q5", column = "q5"),
+        @Result(property = "q6", column = "q6"),
+        @Result(property = "q7", column = "q7"),
+        @Result(property = "q8", column = "q8"),
+        @Result(property = "q9", column = "q9"),
+        @Result(property = "className", column = "clazzName")
+    })
+    Task selectById(Integer id);
 
     @Select("select t.*, c.name as className from task t " +
             "left join clazz c on t.class_id = c.id " +
             "where t.name like concat('%',#{name},'%') " +
             "order by t.id desc")
+    @Results({
+        @Result(property = "experimentContents", column = "experiment_contents"),
+        @Result(property = "experimentSteps", column = "experiment_steps"),
+        @Result(property = "experimentTime", column = "experiment_time"),
+        @Result(property = "experimentContent", column = "experiment_content"),
+        @Result(property = "experimentPurpose", column = "experiment_purpose"),
+        @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "classIds", column = "class_ids"),
+        @Result(property = "classNames", column = "class_names")
+    })
     List<Task> selectByName(String name);
 
     @Select("select t.*, c.name as className from task t " +
             "left join clazz c on t.class_id = c.id " +
             "where t.teacher_id = #{teacherId} " +
             "order by t.id desc")
+    @Results({
+        @Result(property = "experimentContents", column = "experiment_contents"),
+        @Result(property = "experimentSteps", column = "experiment_steps"),
+        @Result(property = "experimentTime", column = "experiment_time"),
+        @Result(property = "experimentContent", column = "experiment_content"),
+        @Result(property = "experimentPurpose", column = "experiment_purpose"),
+        @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "classIds", column = "class_ids"),
+        @Result(property = "classNames", column = "class_names")
+    })
     List<Task> selectByTeacherId(@Param("teacherId") Integer teacherId);
 
     @Select("select t.*, c.name as className from task t " +
             "left join clazz c on t.class_id = c.id " +
             "where t.teacher_id = #{teacherId} and t.name like concat('%',#{name},'%') " +
             "order by t.id desc")
+    @Results({
+        @Result(property = "experimentContents", column = "experiment_contents"),
+        @Result(property = "experimentSteps", column = "experiment_steps"),
+        @Result(property = "experimentTime", column = "experiment_time"),
+        @Result(property = "experimentContent", column = "experiment_content"),
+        @Result(property = "experimentPurpose", column = "experiment_purpose"),
+        @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "classIds", column = "class_ids"),
+        @Result(property = "classNames", column = "class_names")
+    })
     List<Task> selectByTeacherIdAndName(@Param("teacherId") Integer teacherId, @Param("name") String name);
 
     @Select("select t.*, c.name as className from task t " +
             "left join clazz c on t.class_id = c.id " +
             "where t.teacher_id = #{teacherId} and t.course_id = #{courseId} " +
             "order by t.id desc")
+    @Results({
+        @Result(property = "experimentContents", column = "experiment_contents"),
+        @Result(property = "experimentSteps", column = "experiment_steps"),
+        @Result(property = "experimentTime", column = "experiment_time"),
+        @Result(property = "experimentContent", column = "experiment_content"),
+        @Result(property = "experimentPurpose", column = "experiment_purpose"),
+        @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "classIds", column = "class_ids"),
+        @Result(property = "classNames", column = "class_names")
+    })
     List<Task> selectByTeacherIdAndCourseId(@Param("teacherId") Integer teacherId, @Param("courseId") Integer courseId);
 
     @Select("select t.*, c.name as className from task t " +
             "left join clazz c on t.class_id = c.id " +
             "where t.teacher_id = #{teacherId} and t.course_id = #{courseId} and t.name like concat('%',#{name},'%') " +
             "order by t.id desc")
+    @Results({
+        @Result(property = "experimentContents", column = "experiment_contents"),
+        @Result(property = "experimentSteps", column = "experiment_steps"),
+        @Result(property = "experimentTime", column = "experiment_time"),
+        @Result(property = "experimentContent", column = "experiment_content"),
+        @Result(property = "experimentPurpose", column = "experiment_purpose"),
+        @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "classIds", column = "class_ids"),
+        @Result(property = "classNames", column = "class_names")
+    })
     List<Task> selectByTeacherIdAndCourseIdAndName(@Param("teacherId") Integer teacherId,
                                                     @Param("courseId") Integer courseId,
                                                     @Param("name") String name);
@@ -126,19 +271,43 @@ public interface TaskMapper {
             "left join clazz c on t.class_id = c.id " +
             "where t.course_id = #{courseId} " +
             "order by t.id desc")
+    @Results({
+        @Result(property = "experimentContents", column = "experiment_contents"),
+        @Result(property = "experimentSteps", column = "experiment_steps"),
+        @Result(property = "experimentTime", column = "experiment_time"),
+        @Result(property = "experimentContent", column = "experiment_content"),
+        @Result(property = "experimentPurpose", column = "experiment_purpose"),
+        @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "classIds", column = "class_ids"),
+        @Result(property = "classNames", column = "class_names")
+    })
     List<Task> selectByCourseId(@Param("courseId") Integer courseId);
 
     @Select("select t.*, c.name as className from task t " +
             "left join clazz c on t.class_id = c.id " +
             "where t.course_id = #{courseId} and t.name like concat('%',#{name},'%') " +
             "order by t.id desc")
+    @Results({
+        @Result(property = "experimentContents", column = "experiment_contents"),
+        @Result(property = "experimentSteps", column = "experiment_steps"),
+        @Result(property = "experimentTime", column = "experiment_time"),
+        @Result(property = "experimentContent", column = "experiment_content"),
+        @Result(property = "experimentPurpose", column = "experiment_purpose"),
+        @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "classIds", column = "class_ids"),
+        @Result(property = "classNames", column = "class_names")
+    })
     List<Task> selectByCourseIdAndName(@Param("courseId") Integer courseId, @Param("name") String name);
 
     @Delete("delete from task where id = #{id}")
     void deleteById(Integer id);
 
-    @Insert("INSERT INTO task (name, content, cover, class_id, lab, teacher_id, course_id) " +
-            "VALUES (#{name}, #{content}, #{cover}, #{classId}, #{lab}, #{teacherId}, #{courseId})")
+    @Insert("INSERT INTO task (name, content, cover, class_id, class_ids, lab, teacher_id, course_id, " +
+            "place, experiment_time, experiment_content, experiment_purpose, experiment_environment, " +
+            "q1, q2, q3, q4, q5, q6, q7, q8, q9) " +
+            "VALUES (#{name}, #{content}, #{cover}, #{classId}, #{classIds}, #{lab}, #{teacherId}, #{courseId}, " +
+            "#{place}, #{experimentTime}, #{experimentContent}, #{experimentPurpose}, #{experimentEnvironment}, " +
+            "#{q1}, #{q2}, #{q3}, #{q4}, #{q5}, #{q6}, #{q7}, #{q8}, #{q9})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     void insert(Task task);
 
@@ -147,15 +316,34 @@ public interface TaskMapper {
             "content = #{content}, " +
             "cover = #{cover}, " +
             "class_id = #{classId}, " +
+            "class_ids = #{classIds}, " +
             "lab = #{lab}, " +
             "teacher_id = #{teacherId}, " +
-            "course_id = #{courseId} " +
+            "course_id = #{courseId}, " +
+            "place = #{place}, " +
+            "experiment_time = #{experimentTime}, " +
+            "experiment_content = #{experimentContent}, " +
+            "experiment_purpose = #{experimentPurpose}, " +
+            "experiment_environment = #{experimentEnvironment}, " +
+            "q1 = #{q1}, " +
+            "q2 = #{q2}, " +
+            "q3 = #{q3}, " +
+            "q4 = #{q4}, " +
+            "q5 = #{q5}, " +
+            "q6 = #{q6}, " +
+            "q7 = #{q7}, " +
+            "q8 = #{q8}, " +
+            "q9 = #{q9} " +
             "WHERE id = #{id}")
     void updateById(Task task);
 
     // 根据 class_id 查询 student 表中的 id
     @Select("SELECT id FROM student WHERE class_id = #{classId}")
     List<Integer> getStudentIdsByClassId(Integer classId);
+
+    // 检查 work 表中是否已存在相同的 task_id 和 student_id 记录
+    @Select("SELECT COUNT(*) FROM work WHERE task_id = #{taskId} AND student_id = #{studentId}")
+    boolean existsWorkByTaskIdAndStudentId(@Param("taskId") Integer taskId, @Param("studentId") Integer studentId);
 
     // 插入 work 表：实验任务（lab=2）时，把老师填写的任务内容回填到 work 的 scontent/阶段展示字段
     // 目的：老师在创建实验任务时填写的“实验目的/要求”无需在评审弹窗逐个学生再填
@@ -184,23 +372,27 @@ public interface TaskMapper {
     @Delete("DELETE FROM work WHERE task_id = #{taskId}")
     void deleteWorkByTaskId(Integer taskId);
 
-    // 更新 work 表中与 task_id 对应的所有字段
-    @Update("UPDATE work SET " +
-            "student_id = #{studentId}, " +
+    // 更新 work 表中与 task_id 和 student_id 对应的记录（如果不存在则插入）
+    @Insert("INSERT INTO work (task_id, student_id, name, content, scontent, student_stage_title, student_stage_requirement, lab, teacher_id, course_id) " +
+            "VALUES (#{taskId}, #{studentId}, #{name}, #{content}, " +
+            "  CASE WHEN #{lab} = 2 THEN #{content} ELSE NULL END, " +
+            "  CASE WHEN #{lab} = 2 THEN #{name} ELSE NULL END, " +
+            "  CASE WHEN #{lab} = 2 THEN #{content} ELSE NULL END, " +
+            "  #{lab}, #{teacherId}, #{courseId}) " +
+            "ON DUPLICATE KEY UPDATE " +
             "name = #{name}, " +
             "content = #{content}, " +
             "scontent = CASE WHEN #{lab} = 2 THEN #{content} ELSE scontent END, " +
-            "student_stage_title = CASE WHEN #{lab} = 2 THEN #{name} ELSE NULL END, " +
-            "student_stage_requirement = CASE WHEN #{lab} = 2 THEN #{content} ELSE NULL END, " +
+            "student_stage_title = CASE WHEN #{lab} = 2 THEN #{name} ELSE student_stage_title END, " +
+            "student_stage_requirement = CASE WHEN #{lab} = 2 THEN #{content} ELSE student_stage_requirement END, " +
             "lab = #{lab}, " +
             "teacher_id = #{teacherId}, " +
-            "course_id = #{courseId} " +
-            "WHERE task_id = #{taskId}")
+            "course_id = #{courseId}")
     void updateWorkAllFields(@Param("taskId") Integer taskId,
                              @Param("studentId") Integer studentId,
                              @Param("name") String name,
                              @Param("content") String content,
-                             @Param("lab") Integer lab,      // 修改为 Integer 类型
+                             @Param("lab") Integer lab,
                              @Param("teacherId") Integer teacherId,
                              @Param("courseId") Integer courseId);
 }

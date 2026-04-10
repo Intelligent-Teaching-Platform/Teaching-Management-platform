@@ -147,7 +147,7 @@ public class TeacherController {
             // 说明
             int r = 0;
             Row h0 = help.createRow(r++);
-            h0.createCell(0).setCellValue("教师批量导入说明（请勿改动“导入模板”列顺序）");
+            h0.createCell(0).setCellValue("教师批量导入说明（请勿改动\"导入模板\"列顺序）");
             r++;
             Row h1 = help.createRow(r++);
             h1.createCell(0).setCellValue("列索引 -> 字段");
@@ -172,112 +172,111 @@ public class TeacherController {
         }
     }
 
-/**
- * 解析Excel文件内容
- */
-private List<Teacher> parseExcelFile(MultipartFile file) throws IOException {
-    List<Teacher> teachers = new ArrayList<>();
+    /**
+     * 解析Excel文件内容
+     */
+    private List<Teacher> parseExcelFile(MultipartFile file) throws IOException {
+        List<Teacher> teachers = new ArrayList<>();
 
-    // collegeName -> specialityId（取同学院的第一条 speciality 作为兜底）
-    Map<String, Integer> collegeNameToSpecialityId = new HashMap<>();
-    List<Speciality> specialityList = specialityService.selectAll();
-    if (specialityList != null) {
-        for (Speciality s : specialityList) {
-            if (s == null || s.getId() == null || s.getCollegeName() == null) continue;
-            String key = normalizeText(s.getCollegeName());
-            if (key == null || key.isEmpty()) continue;
-            collegeNameToSpecialityId.putIfAbsent(key, s.getId());
+        // collegeName -> specialityId（取同学院的第一条 speciality 作为兜底）
+        Map<String, Integer> collegeNameToSpecialityId = new HashMap<>();
+        List<Speciality> specialityList = specialityService.selectAll();
+        if (specialityList != null) {
+            for (Speciality s : specialityList) {
+                if (s == null || s.getId() == null || s.getCollegeName() == null) continue;
+                String key = normalizeText(s.getCollegeName());
+                if (key == null || key.isEmpty()) continue;
+                collegeNameToSpecialityId.putIfAbsent(key, s.getId());
+            }
         }
-    }
 
-    try (InputStream is = file.getInputStream();
-         Workbook workbook = new XSSFWorkbook(is)) {
+        try (InputStream is = file.getInputStream();
+             Workbook workbook = new XSSFWorkbook(is)) {
 
-        Sheet sheet = workbook.getSheetAt(0);
-        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-            Row row = sheet.getRow(i);
-            if (row == null) continue;
+            Sheet sheet = workbook.getSheetAt(0);
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
 
-            Teacher teacher = new Teacher();
-            teacher.setUsername(getStringValue(row.getCell(0)));
-            teacher.setPassword(getStringValue(row.getCell(1)));
-            teacher.setName(getStringValue(row.getCell(2)));
-            teacher.setSex(getStringValue(row.getCell(3)));
-            teacher.setTitle(getStringValue(row.getCell(4)));
-            // Excel 第 6 列：所属学院（学院名字 -> 映射到 specialityId）
-            String collegeCell = getStringValue(row.getCell(5));
-            if (collegeCell == null || collegeCell.trim().isEmpty()) {
-                throw new RuntimeException("第" + (i + 1) + "行所属学院不能为空");
+                Teacher teacher = new Teacher();
+                teacher.setUsername(getStringValue(row.getCell(0)));
+                teacher.setPassword(getStringValue(row.getCell(1)));
+                teacher.setName(getStringValue(row.getCell(2)));
+                teacher.setSex(getStringValue(row.getCell(3)));
+                teacher.setTitle(getStringValue(row.getCell(4)));
+                // Excel 第 6 列：所属学院（学院名字 -> 映射到 specialityId）
+                String collegeCell = getStringValue(row.getCell(5));
+                if (collegeCell == null || collegeCell.trim().isEmpty()) {
+                    throw new RuntimeException("第" + (i + 1) + "行所属学院不能为空");
+                }
+
+                String collegeKey = normalizeText(collegeCell);
+                Integer specialityId;
+                // 兼容：如果用户仍然填了数字，就按 specialityId 直接解析
+                if (collegeKey != null && collegeKey.matches("^\\d+$")) {
+                    specialityId = Integer.parseInt(collegeKey);
+                } else {
+                    specialityId = collegeNameToSpecialityId.get(collegeKey);
+                }
+
+                if (specialityId == null) {
+                    throw new RuntimeException("第" + (i + 1) + "行所属学院不存在: " + collegeCell);
+                }
+                teacher.setSpecialityId(specialityId);
+                teacher.setAvatar(getStringValue(row.getCell(7)));
+                teacher.setRole("TEACHER");
+
+                teachers.add(teacher);
             }
-
-            String collegeKey = normalizeText(collegeCell);
-            Integer specialityId;
-            // 兼容：如果用户仍然填了数字，就按 specialityId 直接解析
-            if (collegeKey != null && collegeKey.matches("^\\d+$")) {
-                specialityId = Integer.parseInt(collegeKey);
-            } else {
-                specialityId = collegeNameToSpecialityId.get(collegeKey);
-            }
-
-            if (specialityId == null) {
-                throw new RuntimeException("第" + (i + 1) + "行所属学院不存在: " + collegeCell);
-            }
-            teacher.setSpecialityId(specialityId);
-            teacher.setAvatar(getStringValue(row.getCell(7)));
-            teacher.setRole("TEACHER");
-
-
-            teachers.add(teacher);
         }
+        return teachers;
     }
-    return teachers;
-}
 
-/**
- * 文本归一化：去掉全角空格与所有空白字符，提升“学院名称匹配”的鲁棒性。
- */
-private String normalizeText(String s) {
-    if (s == null) return null;
-    return s.replace('\u3000', ' ').replaceAll("\\s+", "").trim();
-}
-
-/**
- * 获取单元格字符串值
- */
-private String getStringValue(Cell cell) {
-    if (cell == null) {
-        return null;
+    /**
+     * 文本归一化：去掉全角空格与所有空白字符，提升"学院名称匹配"的鲁棒性。
+     */
+    private String normalizeText(String s) {
+        if (s == null) return null;
+        return s.replace('\u3000', ' ').replaceAll("\\s+", "").trim();
     }
-    switch (cell.getCellType()) {
-        case STRING:
-            return cell.getStringCellValue().trim();
-        case NUMERIC:
-            return String.valueOf((int) cell.getNumericCellValue());
-        default:
+
+    /**
+     * 获取单元格字符串值
+     */
+    private String getStringValue(Cell cell) {
+        if (cell == null) {
             return null;
+        }
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue().trim();
+            case NUMERIC:
+                return String.valueOf((int) cell.getNumericCellValue());
+            default:
+                return null;
+        }
     }
-}
 
-/**
- * 获取单元格数值
- */
-private Integer getNumericValue(Cell cell) {
-    if (cell == null) {
-        return 0;
-    }
-    switch (cell.getCellType()) {
-        case NUMERIC:
-            return (int) cell.getNumericCellValue();
-        case STRING:
-            try {
-                return Integer.parseInt(cell.getStringCellValue().trim());
-            } catch (NumberFormatException e) {
-                return 0;
-            }
-        default:
+    /**
+     * 获取单元格数值
+     */
+    private Integer getNumericValue(Cell cell) {
+        if (cell == null) {
             return 0;
+        }
+        switch (cell.getCellType()) {
+            case NUMERIC:
+                return (int) cell.getNumericCellValue();
+            case STRING:
+                try {
+                    return Integer.parseInt(cell.getStringCellValue().trim());
+                } catch (NumberFormatException e) {
+                    return 0;
+                }
+            default:
+                return 0;
+        }
     }
-}
 }
 
 

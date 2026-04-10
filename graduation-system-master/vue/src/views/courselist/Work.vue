@@ -84,51 +84,55 @@
           <template #default="scope">
             <div class="op-actions">
               <div class="op-actions-left">
-                <el-button
-                    type="primary"
-                    size="small"
-                    class="op-btn"
-                    @click="handleEdit(scope.row)"
-                    v-if="isStudentUser && !scope.row.state && !isContentDone(scope.row)"
-                >
-                  提交
-                </el-button>
-                <el-button
-                    type="primary"
-                    size="small"
-                    class="op-btn"
-                    @click="handleEdit(scope.row)"
-                    v-if="isStudentUser && !scope.row.state && isContentDone(scope.row)"
-                >
-                  修改
-                </el-button>
-                <el-button
-                    type="primary"
-                    size="small"
-                    class="op-btn"
-                    @click="handleEdit(scope.row)"
-                    v-if="isStudentUser && scope.row.state === '未通过'"
-                >
-                  修改
-                </el-button>
-                <el-button
-                    type="warning"
-                    size="small"
-                    class="op-btn"
-                    @click="handleEdit(scope.row)"
-                    v-if="isTeacherUser && !scope.row.state && isContentDone(scope.row)"
-                >
-                  审核
-                </el-button>
-                <el-button
-                    type="danger"
-                    size="small"
-                    class="op-btn"
-                    @click="handleDelete(scope.row.id)"
-                    v-if="isTeacherUser"
-                >
-                  删除
-                </el-button>
+                <!-- 学生按钮：提交/修改 -->
+                <template v-if="isStudentUser">
+                  <el-button
+                      type="primary"
+                      size="small"
+                      class="op-btn"
+                      @click="handleEdit(scope.row)"
+                      v-if="!scope.row.state && !isContentDone(scope.row)"
+                  >
+                    提交
+                  </el-button>
+                  <el-button
+                      type="primary"
+                      size="small"
+                      class="op-btn"
+                      @click="handleEdit(scope.row)"
+                      v-else-if="!scope.row.state && isContentDone(scope.row)"
+                  >
+                    修改
+                  </el-button>
+                  <el-button
+                      type="primary"
+                      size="small"
+                      class="op-btn"
+                      @click="handleEdit(scope.row)"
+                      v-else-if="scope.row.state === '未通过'"
+                  >
+                    修改
+                  </el-button>
+                </template>
+                <!-- 教师按钮：审核、删除 -->
+                <template v-if="isTeacherUser">
+                  <el-button
+                      type="warning"
+                      size="small"
+                      class="op-btn"
+                      @click="handleEdit(scope.row)"
+                  >
+                    评审
+                  </el-button>
+                  <el-button
+                      type="danger"
+                      size="small"
+                      class="op-btn"
+                      @click="handleDelete(scope.row.id)"
+                  >
+                    删除
+                  </el-button>
+                </template>
               </div>
               <div class="op-actions-right">
                 <el-tooltip content="下载实验报告" placement="top" :show-after="150">
@@ -138,7 +142,6 @@
                       class="op-btn op-btn-icon op-btn-download"
                       circle
                       @click="exportToWord(scope.row)"
-                      v-if="isContentDone(scope.row)"
                   >
                     <el-icon><Download /></el-icon>
                   </el-button>
@@ -151,11 +154,13 @@
       <div class="pagination-container">
         <el-pagination
             background
-            layout="prev, pager, next"
+            layout="total, sizes, prev, pager, next"
             v-model:page-size="data.pageSize"
             v-model:current-page="data.pageNum"
             :total="data.total"
+            :page-sizes="[5, 10, 20, 50, 100]"
             @current-change="changePage"
+            @size-change="handleSizeChange"
         />
       </div>
     </el-card>
@@ -177,78 +182,121 @@
         />
       </el-form-item>
 
-        <!-- 学生 · 实验任务：分段提交（题目来自教师发布，学生仅分段填：环境→步骤→总结） -->
+        <!-- 学生 · 实验任务：按教师题目作答（tip1-tip9） -->
         <template v-if="isStudentUser && data.form.lab === 2">
           <el-alert
             type="info"
             :closable="false"
             show-icon
-            title="请按顺序完成：① 实验环境 → ② 实验内容与步骤 → ③ 实验总结与心得。每一阶段点击保存后，才能填写下一阶段。"
+            :title="`请根据教师发布的实验阶段逐一作答，完成当前阶段后才能进行下一阶段。共 ${taskQuestions.length} 个阶段。`"
             style="margin-bottom: 16px"
           />
           <div class="form-section">
-            <div class="section-title">教师下发的任务</div>
+            <div class="section-title">📋 教师发布的实验信息</div>
             <el-form-item label="任务名称">
               <el-input v-model="data.form.name" type="textarea" :rows="2" disabled />
             </el-form-item>
-            <el-form-item label="任务内容">
-              <el-input v-model="data.form.content" type="textarea" :rows="3" disabled />
+            <el-form-item label="上机地点">
+              <el-input v-model="data.form.taskPlace" disabled />
+            </el-form-item>
+            <el-form-item label="上机时间">
+              <el-input v-model="data.form.taskTime" disabled />
+            </el-form-item>
+            <el-form-item label="上机内容">
+              <el-input v-model="data.form.taskContent" type="textarea" :rows="3" disabled />
+            </el-form-item>
+            <el-form-item label="实验目的及要求">
+              <el-input v-model="data.form.taskPurpose" type="textarea" :rows="4" disabled />
+            </el-form-item>
+            <el-form-item label="实验环境及要求">
+              <el-input v-model="data.form.taskEnvironment" type="textarea" :rows="4" disabled />
             </el-form-item>
           </div>
 
-          <div class="form-section">
-            <div class="section-title">阶段一 · 实验环境</div>
-            <el-form-item label="实验环境" required>
-              <el-input
-                v-model="data.form.tip1"
-                type="textarea"
-                :rows="4"
-                maxlength="500"
-                show-word-limit
-                placeholder="请填写实验环境（如软件版本、硬件环境、依赖说明等）"
-                :disabled="studentStageLocked"
-              />
-              <el-button type="primary" class="stage-btn" :loading="stageSaving === 1" :disabled="studentStageLocked" @click="saveStudentStage(1)">
-                保存实验环境
-              </el-button>
-            </el-form-item>
+          <!-- 动态实验阶段作答区（逐阶段提交模式） -->
+          <div class="form-section" v-if="taskQuestions && taskQuestions.length > 0">
+            <div class="section-title">📝 实验阶段作答（共 {{ taskQuestions.length }} 个阶段）</div>
+            
+            <!-- 逐题显示：只显示当前题目或已完成的题目 -->
+            <div v-for="(q, index) in taskQuestions" :key="index" class="question-answer-section" 
+                 v-show="isQuestionVisible(index)">
+              <el-divider v-if="index > 0" />
+              <el-form-item :label="`阶段 ${index + 1}`">
+                <div class="question-text">{{ q.question }}</div>
+              </el-form-item>
+              <el-form-item :label="`我的解答`" required>
+                <el-input
+                  v-model="studentAnswers[index]"
+                  type="textarea"
+                  :rows="4"
+                  maxlength="2000"
+                  show-word-limit
+                  :placeholder="`请回答阶段 ${index + 1}`"
+                  :disabled="isQuestionSubmitted(index) || studentStageLocked"
+                />
+              </el-form-item>
+              <!-- 当前题目的提交按钮 -->
+              <el-form-item v-if="!isQuestionSubmitted(index) && !studentStageLocked && isCurrentQuestion(index)">
+                <el-button 
+                  type="primary" 
+                  :loading="submittingQuestionIndex === index"
+                  @click="submitSingleQuestion(index)"
+                  :disabled="!studentAnswers[index] || !studentAnswers[index].trim()"
+                >
+                  提交阶段 {{ index + 1 }}
+                </el-button>
+                <span class="submit-hint" v-if="index < taskQuestions.length - 1">
+                  提交后可继续作答下一题
+                </span>
+                <span class="submit-hint" v-else>
+                  最后一题，提交后请填写心得体会
+                </span>
+              </el-form-item>
+              <!-- 已提交标记 -->
+              <el-form-item v-else-if="isQuestionSubmitted(index)">
+                <el-tag type="success">
+                  <el-icon><Check /></el-icon> 已提交
+                </el-tag>
+                <el-button 
+                  type="warning" 
+                  size="small" 
+                  style="margin-left: 10px;"
+                  @click="editSubmittedQuestion(index)"
+                >
+                  修改提交
+                </el-button>
+              </el-form-item>
+            </div>
           </div>
 
-          <div class="form-section">
-            <div class="section-title">阶段二 · 实验内容与步骤</div>
-            <el-form-item label="实验内容与步骤" required>
+          <!-- 心得体会区域：只有所有题目都提交后才显示 -->
+          <div class="form-section" v-if="allQuestionsSubmitted && !studentStageLocked">
+            <div class="section-title">💭 实验总结与心得体会</div>
+            <el-form-item label="心得体会" required>
               <el-input
-                v-model="data.form.tip2"
+                v-model="data.form.experience"
                 type="textarea"
                 :rows="6"
-                maxlength="1000"
+                maxlength="2000"
                 show-word-limit
-                placeholder="请填写实验内容与步骤"
-                :disabled="studentStageLocked || !canEditStage2"
-              />
-              <el-button type="primary" class="stage-btn" :loading="stageSaving === 2" :disabled="studentStageLocked || !canEditStage2" @click="saveStudentStage(2)">
-                保存实验步骤
-              </el-button>
-            </el-form-item>
-          </div>
-
-          <div class="form-section">
-            <el-form-item label="实验总结与心得" required>
-              <el-input
-                v-model="data.form.tip3"
-                type="textarea"
-                :rows="6"
-                maxlength="1000"
-                show-word-limit
-                placeholder="实验总结和心得体会"
-                :disabled="studentStageLocked || !canEditStage3"
+                placeholder="请填写本次实验的心得体会和收获"
               />
             </el-form-item>
             <el-form-item>
-              <el-button type="success" :loading="stageSaving === 3" :disabled="studentStageLocked || !canEditStage3" @click="saveStudentStage(3)">
-                提交实验总结
+              <el-button type="success" :loading="stageSaving === 1" @click="saveStudentAnswers">
+                提交作业
               </el-button>
             </el-form-item>
+          </div>
+
+          <!-- 提示信息：还有题目未完成 -->
+          <div class="form-section" v-else-if="!allQuestionsSubmitted && !studentStageLocked">
+            <el-alert
+              type="warning"
+              :closable="false"
+              show-icon
+              :title="`请先完成题目 ${currentQuestionIndex + 1} 的作答并提交`"
+            />
           </div>
         </template>
 
@@ -267,68 +315,139 @@
             />
           </el-form-item>
         </div>
-        <el-form-item label="任务内容" prop="content">
+        <!-- 非实验作业显示任务内容 -->
+        <el-form-item label="任务内容" prop="content" v-if="data.form.lab !== 2">
           <el-input v-model="data.form.content" type="textarea" :rows="3" autocomplete="off" :disabled="isStudentUser" />
         </el-form-item>
+        <!-- 教师评审：和学生提交作业相同的布局，但添加评分功能 -->
         <template v-if="isTeacherUser && data.form.lab === 2">
-          <el-form-item label="学生·题目">
-            <el-input v-model="data.form.studentStageTitle" type="textarea" :rows="2" disabled placeholder="学生无需填写" />
-          </el-form-item>
-          <el-form-item label="学生·要求">
-            <el-input v-model="data.form.studentStageRequirement" type="textarea" :rows="3" disabled placeholder="学生无需填写" />
-          </el-form-item>
+          <!-- 实验任务信息（只读） -->
+          <div class="form-section">
+            <div class="section-title">📋 实验任务信息</div>
+            <el-form-item label="上机内容">
+              <el-input v-model="data.form.taskContent" type="textarea" :rows="3" disabled />
+            </el-form-item>
+            <el-form-item label="实验目的及要求">
+              <el-input v-model="data.form.taskPurpose" type="textarea" :rows="4" disabled />
+            </el-form-item>
+            <el-form-item label="实验环境及要求">
+              <el-input v-model="data.form.taskEnvironment" type="textarea" :rows="4" disabled />
+            </el-form-item>
+          </div>
+
+          <!-- 动态实验阶段（和学生端一样，但添加评分） -->
+          <div class="form-section" v-if="taskQuestions && taskQuestions.length > 0">
+            <div class="section-title">📝 实验阶段作答（共 {{ taskQuestions.length }} 个阶段）</div>
+            
+            <div v-for="(q, index) in taskQuestions" :key="index" class="question-answer-section">
+              <el-divider v-if="index > 0" />
+              <!-- 阶段题目 -->
+              <el-form-item :label="`阶段 ${index + 1}`">
+                <div class="question-text">{{ q.question }}</div>
+              </el-form-item>
+              <!-- 学生作答（只读） -->
+              <el-form-item :label="`学生作答`">
+                <el-input
+                  v-model="studentAnswers[index]"
+                  type="textarea"
+                  :rows="4"
+                  disabled
+                />
+              </el-form-item>
+              <!-- 阶段评分 -->
+              <el-form-item :label="`阶段 ${index + 1} 评分`">
+                <el-input-number 
+                  v-model="stageScores['stage' + (index + 1)]" 
+                  :min="0" 
+                  :max="100" 
+                  :precision="1"
+                  placeholder="请输入分数"
+                  style="width: 150px;"
+                />
+                <span class="score-hint">分</span>
+              </el-form-item>
+            </div>
+          </div>
+
+          <!-- 心得体会 -->
+          <div class="form-section">
+            <div class="section-title">💭 实验总结与心得体会</div>
+            <el-form-item label="心得体会">
+              <el-input
+                v-model="data.form.experience"
+                type="textarea"
+                :rows="6"
+                disabled
+              />
+            </el-form-item>
+          </div>
         </template>
-        <div class="form-section">
-          <el-form-item label="* 实验目的">
-            <el-input
-                v-model="data.form.scontent"
-                type="textarea"
-                :rows="4"
-                show-word-limit
-                maxlength="500"
-                placeholder="学生无需填写"
-                :disabled="data.form.lab === 2"
-            />
-          </el-form-item>
-          <el-form-item label="* 实验环境">
-            <el-input
-                v-model="data.form.tip1"
-                type="textarea"
-                :rows="4"
-                show-word-limit
-                maxlength="500"
-                placeholder="请输入实验环境"
-                :disabled="isStudentUser && data.form.lab === 2"
-            />
-          </el-form-item>
-          <el-form-item label="* 实验内容和步骤">
-            <el-input
-                v-model="data.form.tip2"
-                type="textarea"
-                :rows="6"
-                show-word-limit
-                maxlength="1000"
-                placeholder="请输入实验内容和步骤"
-                :disabled="isStudentUser && data.form.lab === 2"
-            />
-          </el-form-item>
-        </div>
-        <div class="form-section">
-          <el-form-item label="* 实验总结和心得体会">
-            <el-input
-                v-model="data.form.tip3"
-                type="textarea"
-                :rows="6"
-                show-word-limit
-                maxlength="1000"
-                placeholder="请输入实验总结和心得体会"
-                :disabled="isStudentUser && data.form.lab === 2"
-            />
-          </el-form-item>
-        </div>
+        
+        <!-- 学生编辑/提交 -->
+        <template v-if="isStudentUser && data.form.lab === 2">
+          <div class="form-section">
+            <el-form-item label="* 实验目的">
+              <el-input
+                  v-model="data.form.scontent"
+                  type="textarea"
+                  :rows="4"
+                  show-word-limit
+                  maxlength="500"
+                  placeholder="学生无需填写"
+                  disabled
+              />
+            </el-form-item>
+            <el-form-item label="* 实验环境">
+              <el-input
+                  v-model="data.form.tip1"
+                  type="textarea"
+                  :rows="4"
+                  show-word-limit
+                  maxlength="500"
+                  placeholder="请输入实验环境"
+              />
+            </el-form-item>
+            <el-form-item label="* 实验内容和步骤">
+              <el-input
+                  v-model="data.form.tip2"
+                  type="textarea"
+                  :rows="6"
+                  show-word-limit
+                  maxlength="1000"
+                  placeholder="请输入实验内容和步骤"
+              />
+            </el-form-item>
+          </div>
+          <div class="form-section">
+            <el-form-item label="* 实验总结和心得体会">
+              <el-input
+                  v-model="data.form.tip3"
+                  type="textarea"
+                  :rows="6"
+                  show-word-limit
+                  maxlength="1000"
+                  placeholder="请输入实验总结和心得体会"
+              />
+            </el-form-item>
+          </div>
+        </template>
         </template>
 
-        <el-form-item label="评分" prop="score" v-if="isTeacherUser">
+        <!-- 教师评分汇总（实验作业） -->
+        <div class="form-section" v-if="isTeacherUser && data.form.lab === 2">
+          <div class="section-title">📊 评分汇总</div>
+          <el-form-item label="总分">
+            <el-input 
+              v-model="data.form.score" 
+              disabled
+              style="width: 150px;"
+            />
+            <span class="score-hint">分（各阶段分数自动累加）</span>
+          </el-form-item>
+        </div>
+
+        <!-- 非实验作业或旧版评分 -->
+        <el-form-item label="评分" prop="score" v-if="isTeacherUser && data.form.lab !== 2">
           <el-input v-model="data.form.score" autocomplete="off"/>
         </el-form-item>
         <el-form-item label="修改意见" prop="amendment" v-if="isTeacherUser">
@@ -388,9 +507,9 @@ import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
 import ImageModule from "docxtemplater-image-module-free";
 import { saveAs } from "file-saver";
-import { reactive, computed, ref } from "vue";
+import { reactive, computed, ref, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { Plus, Download, MagicStick } from "@element-plus/icons-vue";
+import { Plus, Download, MagicStick, Check } from "@element-plus/icons-vue";
 import { getUploadUrl } from '@/utils/appConfig'
 
 const router = useRouter();
@@ -412,7 +531,7 @@ const showExpFormDialog = () => {
 
 const data = reactive({
   pageNum: 1,
-  pageSize: 100,
+  pageSize: 5,
   total: 0,
   formVisible: false,
   form: {},
@@ -429,6 +548,49 @@ const data = reactive({
     summaryAndReflection: "",
     attachment: "",
   },
+});
+
+// 教师发布的题目列表
+const taskQuestions = ref([]);
+// 学生的答案数组（对应tip1-tip9）
+const studentAnswers = ref([]);
+// 记录已提交的题目索引
+const submittedQuestions = ref([]);
+// 当前正在提交的题目索引
+const submittingQuestionIndex = ref(-1);
+
+// 教师评审阶段分数（不保存到数据库，仅用于计算总分）
+const stageScores = ref({
+  stage1: null,
+  stage2: null,
+  stage3: null,
+  stage4: null,
+  stage5: null,
+  stage6: null,
+  stage7: null,
+  stage8: null,
+  stage9: null,
+});
+
+// 计算总分（阶段分数之和）
+const totalScore = computed(() => {
+  const s1 = Number(stageScores.value.stage1) || 0;
+  const s2 = Number(stageScores.value.stage2) || 0;
+  const s3 = Number(stageScores.value.stage3) || 0;
+  const s4 = Number(stageScores.value.stage4) || 0;
+  const s5 = Number(stageScores.value.stage5) || 0;
+  const s6 = Number(stageScores.value.stage6) || 0;
+  const s7 = Number(stageScores.value.stage7) || 0;
+  const s8 = Number(stageScores.value.stage8) || 0;
+  const s9 = Number(stageScores.value.stage9) || 0;
+  return s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9;
+});
+
+// 监听阶段分数变化，自动更新总分到表单
+watch(totalScore, (newScore) => {
+  if (isTeacherUser.value && data.form && data.formVisible) {
+    data.form.score = newScore;
+  }
 });
 
 const isStudentUser = computed(() => String(data.user?.role ?? '').toUpperCase() === 'STUDENT');
@@ -450,6 +612,9 @@ const courseId = computed(() => {
 
 // 教师列表展示：实验作业相似度（最大相似度文本，如 "85.23%"）
 const experimentSimilarityMap = reactive({})
+
+// taskId → 该任务发布的题目数量（q1-q9 中非空的数量）
+const taskQCountMap = reactive({})
 
 async function fetchExperimentSimilarity(workId) {
   if (!workId) return
@@ -476,6 +641,48 @@ async function preloadExperimentSimilarities(list) {
     while (idx < items.length) {
       const current = items[idx++]
       await fetchExperimentSimilarity(current.id)
+    }
+  })
+  await Promise.all(workers)
+}
+
+/**
+ * 获取指定 taskId 对应的题目数量（q1-q9 非空计数），结果缓存到 taskQCountMap。
+ * 仅在 lab=2 的 work 行中调用。
+ */
+async function fetchTaskQCount(taskId) {
+  if (!taskId) return
+  if (taskQCountMap[taskId] != null) return // 已缓存
+  try {
+    const res = await request.get(`/task/selectById/${taskId}`)
+    if (res?.code === '200' && res.data) {
+      const task = res.data
+      let count = 0
+      for (let i = 1; i <= 9; i++) {
+        if (task[`q${i}`] && String(task[`q${i}`]).trim()) count++
+      }
+      taskQCountMap[taskId] = count
+    }
+  } catch (e) {
+    console.error('获取任务题目数量失败:', e)
+  }
+}
+
+/**
+ * 批量预加载 lab=2 的 work 列表对应的 task q数量
+ */
+async function preloadTaskQCounts(list) {
+  if (!Array.isArray(list) || list.length === 0) return
+  const taskIds = [...new Set(
+    list.filter(x => Number(x?.lab) === 2 && x?.taskId).map(x => x.taskId)
+  )]
+  if (taskIds.length === 0) return
+  const concurrency = 5
+  let idx = 0
+  const workers = new Array(concurrency).fill(0).map(async () => {
+    while (idx < taskIds.length) {
+      const id = taskIds[idx++]
+      await fetchTaskQCount(id)
     }
   })
   await Promise.all(workers)
@@ -516,7 +723,7 @@ const polishTeacherComment = async () => {
           {
             role: 'user',
             content:
-              '请对下面这段“教师评价”进行中文润色。场景：教师给学生当前实验作业的评价/反馈。\n' +
+              '请对下面这段"教师评价"进行中文润色。场景：教师给学生当前实验作业的评价/反馈。\n' +
               '要求：保持原意；针对学生作品的表述更专业、客观、具体，给出可执行的改进建议，避免空泛或评价老师自己的话；输出仅给出润色后的文本，不要添加前缀或解释。\n\n教师评价：\n' +
               text,
           },
@@ -550,6 +757,23 @@ const hasText = (s) => s !== undefined && s !== null && String(s).trim() !== ''
 
 function isContentDone(row) {
   if (!row) return false
+  if (Number(row.lab) === 2) {
+    // lab=2：按教师发布的题目数量（qCount）判断
+    // qCount 从 taskQCountMap 中取，若尚未加载则降级为检查 tip1
+    const qCount = row.taskId != null ? (taskQCountMap[row.taskId] ?? null) : null
+    if (qCount != null && qCount > 0) {
+      // 统计学生已填写的 tip 数量
+      let filledCount = 0
+      for (let i = 1; i <= 9; i++) {
+        if (hasText(row[`tip${i}`])) filledCount++
+      }
+      // 必须完成所有阶段题目 AND 填写心得体会才算完成
+      return filledCount >= qCount && hasText(row.experience)
+    }
+    // qCount 未加载时：兜底检查 tip1（至少有一个答案）
+    return hasText(row.tip1) && hasText(row.experience)
+  }
+  // 非 lab=2：原逻辑（tip1/tip2/tip3 均有内容）
   const sp = row.submitPhase != null && row.submitPhase !== '' ? Number(row.submitPhase) : null
   if (sp != null && !Number.isNaN(sp) && sp >= 3) {
     return hasText(row.tip1) && hasText(row.tip2) && hasText(row.tip3)
@@ -560,7 +784,7 @@ function isContentDone(row) {
 function getSubmitPhase(row) {
   if (!row) return 0
   const sp = row.submitPhase != null && row.submitPhase !== '' ? Number(row.submitPhase) : null
-  // submit_phase=0 也应当被视为“已进入阶段体系”，避免误回退到 studentStageTitle/Requirement
+  // submit_phase=0 也应当被视为"已进入阶段体系"，避免误回退到 studentStageTitle/Requirement
   if (sp != null && !Number.isNaN(sp)) return Math.min(3, Math.max(0, sp))
 
   let p = 0
@@ -571,11 +795,30 @@ function getSubmitPhase(row) {
 }
 
 function phaseProgressLabel(row) {
-  const p = getSubmitPhase(row)
-  if (p <= 0) return '未开始'
-  if (p === 1) return '已完成题目（1/3）'
-  if (p === 2) return '已完成题目+要求（2/3）'
-  return '已完成提交（3/3）'
+  if (!row) return '-'
+  
+  // 获取教师发布的题目数量
+  const qCount = row.taskId != null ? (taskQCountMap[row.taskId] ?? null) : null
+  const totalQuestions = qCount != null && qCount > 0 ? qCount : 3 // 默认3个阶段
+  
+  // 统计已完成的阶段数
+  let completedStages = 0
+  for (let i = 1; i <= 9; i++) {
+    if (hasText(row[`tip${i}`])) completedStages++
+  }
+  
+  // 如果所有阶段都完成了
+  if (completedStages >= totalQuestions) {
+    // 检查是否填写了心得体会
+    if (hasText(row.experience)) {
+      return '已完成'
+    } else {
+      return '心得体会'
+    }
+  }
+  
+  // 返回下一个待完成的阶段
+  return `阶段${completedStages + 1}`
 }
 
 function formatDateTime(v) {
@@ -637,8 +880,8 @@ async function saveStudentStage(phase) {
   }
 }
 
-// 筛选选项
-const filterOption = ref('全部');
+// 筛选选项 - 学生默认显示待提交，教师默认显示待审核
+const filterOption = ref(isStudentUser.value ? '待提交' : '待审核');
 
 // 根据筛选选项过滤作业
 const filteredAssignments = computed(() => {
@@ -647,15 +890,13 @@ const filteredAssignments = computed(() => {
   } else if (filterOption.value === '待提交') {
     return data.tableData.filter(item => {
       const lab = Number(item.lab)
-      const sp = item.submitPhase != null && item.submitPhase !== '' ? Number(item.submitPhase) : 0
-      if (lab === 2) return (!item.state && sp < 3)
+      if (lab === 2) return (!item.state && !isContentDone(item))
       return (!item.state && !item.scontent)
     });
   } else if (filterOption.value === '待审核') {
     return data.tableData.filter(item => {
       const lab = Number(item.lab)
-      const sp = item.submitPhase != null && item.submitPhase !== '' ? Number(item.submitPhase) : 0
-      if (lab === 2) return (!item.state && sp >= 3)
+      if (lab === 2) return (!item.state && isContentDone(item))
       return (!item.state && item.scontent)
     });
   } else if (filterOption.value === '待修改') {
@@ -681,6 +922,7 @@ const load = async () => {
     if (isTeacherUser.value) {
       // 清空上一页缓存，避免显示错页数据
       Object.keys(experimentSimilarityMap).forEach(k => delete experimentSimilarityMap[k])
+      Object.keys(taskQCountMap).forEach(k => delete taskQCountMap[k])
     }
     if (isTeacherUser.value) {
       teacherId = loginId;
@@ -713,10 +955,12 @@ const load = async () => {
       }
       data.tableData = list;
       data.total = res.data.total || 0;
-      // 仅教师列表需要“实验名称下的相似度”，只预加载当前页
+      // 仅教师列表需要"实验名称下的相似度"，只预加载当前页
       if (isTeacherUser.value) {
         preloadExperimentSimilarities(data.tableData)
       }
+      // 预加载 lab=2 的 work 对应 task 的题目数量（用于审核按钮显示判断）
+      preloadTaskQCounts(data.tableData)
     } else {
       console.error("请求数据失败，响应格式不符合预期");
       ElMessage.error("请求数据失败，请稍后重试");
@@ -735,9 +979,31 @@ const handleAdd = () => {
 };
 
 // 编辑
-const handleEdit = (row) => {
+const handleEdit = async (row) => {
   data.form = JSON.parse(JSON.stringify(row));
   data.formVisible = true;
+
+  // 重置阶段评分（教师评审时使用）
+  if (isTeacherUser.value && Number(row?.lab) === 2) {
+    stageScores.value = {
+      stage1: null,
+      stage2: null,
+      stage3: null,
+      stage4: null,
+      stage5: null,
+      stage6: null,
+      stage7: null,
+      stage8: null,
+      stage9: null,
+    };
+  }
+
+  // 加载任务详情（获取教师发布的题目）- 教师和学生都需要
+  if (Number(row?.lab) === 2 && row?.taskId) {
+    await loadTaskDetail(row.taskId);
+    // 加载学生已有的答案（教师评审时需要显示学生作答）
+    loadStudentAnswers(row);
+  }
 
   // 教师审核时：请求查重提示（最大相似度 + 对应学生）
   similarityHint.visible = false;
@@ -770,6 +1036,213 @@ const handleEdit = (row) => {
         similarityHint.visible = true;
       }
     }).catch(() => {});
+  }
+};
+
+// 加载任务详情
+const loadTaskDetail = async (taskId) => {
+  try {
+    const res = await request.get(`/task/selectById/${taskId}`);
+    if (res.code === '200' && res.data) {
+      const task = res.data;
+      // 设置任务信息到表单
+      data.form.taskPlace = task.place || '';
+      data.form.taskTime = task.experimentTime || '';
+      data.form.taskContent = task.experimentContent || '';
+      data.form.taskPurpose = task.experimentPurpose || '';
+      data.form.taskEnvironment = task.experimentEnvironment || '';
+      // 将q1-q9字段转换为题目数组
+      taskQuestions.value = [];
+      for (let i = 1; i <= 9; i++) {
+        const q = task[`q${i}`];
+        if (q && q.trim()) {
+          taskQuestions.value.push({ id: i, question: q });
+        }
+      }
+    }
+  } catch (e) {
+    console.error('加载任务详情失败:', e);
+  }
+};
+
+// 加载学生已有的答案
+const loadStudentAnswers = (row) => {
+  // 从row中提取tip1-tip9到studentAnswers数组
+  const answers = [];
+  const submitted = [];
+  for (let i = 1; i <= 9; i++) {
+    const answer = row[`tip${i}`] || '';
+    answers.push(answer);
+    // 如果答案不为空，标记为已提交
+    submitted.push(!!answer.trim());
+  }
+  studentAnswers.value = answers;
+  submittedQuestions.value = submitted;
+  // 确保数组长度与题目数量一致
+  while (studentAnswers.value.length < taskQuestions.value.length) {
+    studentAnswers.value.push('');
+    submittedQuestions.value.push(false);
+  }
+};
+
+// 判断题目是否已提交
+const isQuestionSubmitted = (index) => {
+  return submittedQuestions.value[index] === true;
+};
+
+// 判断题目是否锁定（前面的题目未提交）
+const isQuestionLocked = (index) => {
+  if (index === 0) return false;
+  return !submittedQuestions.value[index - 1];
+};
+
+// 判断是否是当前题目（前面的已提交，当前未提交）
+const isCurrentQuestion = (index) => {
+  if (index === 0) return !submittedQuestions.value[0];
+  return submittedQuestions.value[index - 1] && !submittedQuestions.value[index];
+};
+
+// 判断题目是否可见（已提交或是当前题目）
+const isQuestionVisible = (index) => {
+  return isQuestionSubmitted(index) || !isQuestionLocked(index);
+};
+
+// 计算当前应该作答的题目索引
+const currentQuestionIndex = computed(() => {
+  for (let i = 0; i < taskQuestions.value.length; i++) {
+    if (!submittedQuestions.value[i]) return i;
+  }
+  return taskQuestions.value.length;
+});
+
+// 判断是否所有题目都已提交
+const allQuestionsSubmitted = computed(() => {
+  if (taskQuestions.value.length === 0) return false;
+  return taskQuestions.value.every((_, index) => submittedQuestions.value[index]);
+});
+
+// 编辑已提交的题目（重新启用编辑）
+const editSubmittedQuestion = (index) => {
+  submittedQuestions.value[index] = false;
+  ElMessage.info(`现在可以修改阶段 ${index + 1} 的内容，修改后请重新提交`);
+};
+
+// 提交单个题目
+const submitSingleQuestion = async (index) => {
+  if (!studentAnswers.value[index]?.trim()) {
+    ElMessage.warning(`请先填写阶段 ${index + 1} 的答案`);
+    return;
+  }
+
+  submittingQuestionIndex.value = index;
+  try {
+    // 构建payload，保留原有字段防止被置空
+    const payload = {
+      id: data.form.id,
+      name: data.form.name || '',
+      content: data.form.content || '',
+      file: data.form.file || '',
+      score: data.form.score,
+      teacherId: data.form.teacherId,
+      studentId: data.form.studentId,
+      state: data.form.state,
+      scontent: data.form.scontent || '',
+      amendment: data.form.amendment || '',
+      teacherComment: data.form.teacherComment || '',
+      lab: data.form.lab,
+      taskId: data.form.taskId,
+      courseId: data.form.courseId,
+      studentStageTitle: data.form.studentStageTitle || '',
+      studentStageRequirement: data.form.studentStageRequirement || '',
+      submitPhase: data.form.submitPhase,
+      experience: data.form.experience || '',
+    };
+
+    // 保存所有已填写的阶段答案
+    for (let i = 0; i < 9; i++) {
+      payload[`tip${i + 1}`] = studentAnswers.value[i] || '';
+    }
+
+    const res = await request.put('/work/update', payload);
+    if (res.code === '200') {
+      submittedQuestions.value[index] = true;
+      ElMessage.success(`阶段 ${index + 1} 提交成功`);
+
+      // 更新本地 form 数据
+      for (let i = 0; i < 9; i++) {
+        data.form[`tip${i + 1}`] = studentAnswers.value[i] || '';
+      }
+
+      // 刷新列表数据，确保再次打开时显示正确的阶段状态
+      load();
+    } else {
+      ElMessage.error(res.msg || '提交失败');
+    }
+  } catch (e) {
+    console.error('提交失败:', e);
+    ElMessage.error('提交失败，请稍后重试');
+  } finally {
+    submittingQuestionIndex.value = -1;
+  }
+};
+
+// 保存学生答案
+const saveStudentAnswers = async () => {
+  // 检查是否所有题目都已回答
+  const unanswered = studentAnswers.value.findIndex((a, i) => i < taskQuestions.value.length && !a.trim());
+  if (unanswered !== -1) {
+    ElMessage.warning(`请完成阶段 ${unanswered + 1} 的作答`);
+    return;
+  }
+  if (!data.form.experience || !data.form.experience.trim()) {
+    ElMessage.warning('请填写心得体会');
+    return;
+  }
+  
+  stageSaving.value = 1;
+  try {
+    // 组装答案到tip1-tip9，保留原有字段防止被置空
+    const payload = {
+      id: data.form.id,
+      name: data.form.name, // 保留原有任务名称
+      content: data.form.content, // 保留原有任务内容
+      file: data.form.file, // 保留作业文件
+      score: data.form.score, // 保留作业学分
+      lab: data.form.lab, // 保留任务类型
+      teacherId: data.form.teacherId, // 保留教师ID
+      studentId: data.form.studentId, // 保留学生ID
+      courseId: data.form.courseId, // 保留课程ID
+      taskId: data.form.taskId, // 保留任务ID
+      scontent: data.form.scontent, // 保留学生作业
+      studentStageTitle: data.form.studentStageTitle, // 保留阶段标题
+      studentStageRequirement: data.form.studentStageRequirement, // 保留阶段要求
+      tip1: studentAnswers.value[0] || '',
+      tip2: studentAnswers.value[1] || '',
+      tip3: studentAnswers.value[2] || '',
+      tip4: studentAnswers.value[3] || '',
+      tip5: studentAnswers.value[4] || '',
+      tip6: studentAnswers.value[5] || '',
+      tip7: studentAnswers.value[6] || '',
+      tip8: studentAnswers.value[7] || '',
+      tip9: studentAnswers.value[8] || '',
+      experience: data.form.experience || '',
+      state: null, // 提交后变为待审核
+      submitPhase: 3, // 已完成
+    };
+    
+    const res = await request.put('/work/update', payload);
+    if (res.code === '200') {
+      ElMessage.success('作业提交成功');
+      data.formVisible = false;
+      load();
+    } else {
+      ElMessage.error(res.msg || '提交失败');
+    }
+  } catch (e) {
+    console.error('提交失败:', e);
+    ElMessage.error('提交失败，请稍后重试');
+  } finally {
+    stageSaving.value = 0;
   }
 };
 
@@ -838,6 +1311,13 @@ const changePage = (pageNum) => {
   load();
 };
 
+// 分页大小变化
+const handleSizeChange = (pageSize) => {
+  data.pageSize = pageSize;
+  data.pageNum = 1; // 重置到第一页
+  load();
+};
+
 // 使用 public/word.docx 模板生成并下载实验报告
 const exportToWord = async (row) => {
   const templateUrl = "/word.docx";
@@ -868,36 +1348,78 @@ const exportToWord = async (row) => {
       modules: [imageModule],
     });
 
-    // 兼容两类模板：
-    // 1) 字段占位符版（detail/document.vue 使用的：title/purpose/environment/...）
-    // 2) 表格循环版（历史 Work.vue 使用过的：tableData 循环）
-    const tableData = [
-      {
-        name: row.name || "",
-        student: row.studentName || "",
-        teacher: row.teacherName || "",
-        content: row.content || "",
-        scontent: row.scontent || "",
-        tip1: row.tip1 || "",
-        tip2: row.tip2 || "",
-        tip3: row.tip3 || "",
-        amendment: row.amendment || "",
-        teacherComment: row.teacherComment || "",
-        score: row.score ?? "",
-      },
-    ];
+    // 从路由获取课程名称和教师名称
+    const courseName = row.courseName || route.query.courseName || route.query.name || "";
+    const teacherName = row.teacherName || route.query.teacherName || "";
+    
+    // 从work关联表获取的信息
+    const studentCode = row.studentCode || "";
+    const studentName = row.studentName || "";
+    const place = row.place || "";
+    const className = row.className || "";
+    
+    // 时间处理：只取年月日，去掉时分秒
+    const experimentTime = row.experimentTime || "";
+    let time = "";
+    if (experimentTime) {
+      // 如果task表有experimentTime，只取年月日部分
+      time = experimentTime.split(' ')[0] || experimentTime.split('T')[0] || experimentTime;
+    }
+    
+    // 实验目的及要求、实验环境
+    const purpose = row.experimentPurpose || "";
+    const environment = row.experimentEnvironment || "";
+    
+    // 调试日志：打印完整的 row 对象
+    console.log("Word导出 - 完整的row数据:", JSON.stringify(row, null, 2));
+    console.log("Word导出 - 关键字段:", {
+      taskId: row.taskId,
+      experimentTime: row.experimentTime,
+      experimentPurpose: row.experimentPurpose,
+      experimentEnvironment: row.experimentEnvironment,
+      q1: row.q1, q2: row.q2, q3: row.q3,
+      tip1: row.tip1, tip2: row.tip2, tip3: row.tip3,
+    });
+    
+    // 构建题目和解答数据（如果qn或tipn为空则不显示）
+    const questionAnswerData = {};
+    for (let i = 1; i <= 9; i++) {
+      const q = row[`q${i}`];
+      const tip = row[`tip${i}`];
+      // 只有当题目不为空时才显示题目和答案
+      if (q && String(q).trim()) {
+        questionAnswerData[`q${i}`] = q;
+        questionAnswerData[`tip${i}`] = tip || "";
+      } else {
+        questionAnswerData[`q${i}`] = "";
+        questionAnswerData[`tip${i}`] = "";
+      }
+    }
+    
+    // 心得体会和教师评语
+    const experience = row.experience || "";
+    const teacherComment = row.teacherComment || "";
+    
     doc.render({
-      // 字段占位符版
-      title: row.name || "",
-      purpose: row.scontent || "",
-      environment: row.tip1 || "",
-      contentAndSteps: row.tip2 || "",
-      summaryAndReflection: row.tip3 || "",
-      attachment: row.file || "",
-      teacherComment: row.teacherComment || "",
-      amendment: row.amendment || "",
-      // 表格循环版
-      tableData,
+      // 表格循环标记（模板结构需要）
+      tableData: [{}],
+      // 课程/教师/学生信息
+      courseName,
+      teacherName,
+      studentCode,
+      studentName,
+      place,
+      classIds: className,  // 使用className作为班级名称
+      time,
+      // 实验基本信息（使用task表的experiment_content作为上机内容）
+      name: row.experimentContent || "",
+      purpose,
+      environment,
+      // 题目与答案（q1-q9 是题目，tip1-tip9 是学生答案）
+      ...questionAnswerData,
+      // 心得与评语
+      experience,
+      teacherComment,
     });
 
     const out = doc.getZip().generate({ type: "blob" });
@@ -905,7 +1427,9 @@ const exportToWord = async (row) => {
     ElMessage.success("实验报告已下载");
   } catch (error) {
     console.error("生成实验报告失败:", error);
-    ElMessage.error("生成实验报告失败，请检查模板占位符或稍后重试");
+    // docxtemplater 会把详细错误放在 error.properties.errors
+    const detail = error?.properties?.errors?.map(e => e.message).join('; ') || error?.message || '';
+    ElMessage.error("生成实验报告失败：" + (detail || "请检查模板占位符或稍后重试"));
   }
 };
 
@@ -1131,12 +1655,19 @@ load();
   text-align: center;
 }
 
-/* 固定“相似度”标签宽度，避免列表布局因文本长度抖动 */
+/* 固定"相似度"标签宽度，避免列表布局因文本长度抖动 */
 .exp-similarity-tag {
   width: 120px;
   display: inline-flex;
   justify-content: center;
   align-items: center;
   white-space: nowrap;
+}
+
+/* 阶段评分样式 */
+.score-hint {
+  margin-left: 8px;
+  color: #909399;
+  font-size: 14px;
 }
 </style>
