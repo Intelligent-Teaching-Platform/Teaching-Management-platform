@@ -1,5 +1,11 @@
 <template>
-  <div style="margin: 30px auto">
+  <div class="paper-page">
+    <div class="paper-back-row">
+      <el-button type="default" text class="paper-back-btn" @click="goBack">
+        <el-icon class="paper-back-icon"><ArrowLeft /></el-icon>
+        返回
+      </el-button>
+    </div>
     <div style="font-size: 20px; font-weight: bold; text-align: center">{{ data.testPaperData.name }}</div>
     <div style="margin-top: 15px; color: #666666; text-align: center">
       <span>课程名称：{{ data.testPaperData.courseName }}</span>
@@ -14,7 +20,7 @@
 <!--    </div>-->
 
     <div style="margin-top: 50px">
-      <div v-for="item in data.testPaperData.questions" style="margin-bottom: 20px">
+      <div v-for="item in data.testPaperData.questions" :key="item.id ?? item.name" style="margin-bottom: 20px">
         <div style="font-weight: bold; font-size: 16px; background-color: #ddf1ec; line-height: 30px; padding: 5px; margin-bottom: 10px">
           {{ item.name }}
         </div>
@@ -43,22 +49,46 @@
   </div>
 </template>
 <script setup>
-import {reactive, onMounted} from "vue";
-import request from "@/utils/request.js";
-import router from "@/router/index.js";
-import {ElMessage} from "element-plus";
+import { reactive, onMounted } from 'vue'
+import request from '@/utils/request.js'
+import router from '@/router/index.js'
+import { useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { ArrowLeft } from '@element-plus/icons-vue'
 
+const route = useRoute()
 
 const data = reactive({
   testPaperId: router.currentRoute.value.query.id,
   testPaperData: {},
   user: JSON.parse(localStorage.getItem('system-user') || '{}'),
 })
+
+const goBack = () => {
+  if (typeof window !== 'undefined' && window.history.length > 1) {
+    router.back()
+    return
+  }
+  const courseId =
+    route.query.courseId ?? data.testPaperData?.courseId ?? null
+  const courseName =
+    route.query.courseName ||
+    data.testPaperData?.courseName ||
+    ''
+  router.push({
+    path: '/course/courseDetail/exam',
+    query: {
+      ...(courseId != null && courseId !== '' ? { id: String(courseId) } : {}),
+      ...(courseName ? { courseName } : {}),
+    },
+  })
+}
+
 onMounted(() => {
-  data.testPaperId = router.currentRoute.value.query.id;
-  data.teacherName = router.currentRoute.value.query.teacherName || '';
-  data.courseName = router.currentRoute.value.query.courseName || '';
-  loadTestPaper();
+  data.testPaperId = router.currentRoute.value.query.id
+  data.teacherName = router.currentRoute.value.query.teacherName || ''
+  data.courseName = router.currentRoute.value.query.courseName || ''
+  loadTestPaper()
 })
 
 const loadTestPaper = () => {
@@ -83,9 +113,33 @@ const submitPaper = () => {
     }
   })
 }
-loadTestPaper()
 </script>
 <style scoped>
+.paper-page {
+  max-width: 900px;
+  margin: 24px auto 40px;
+  padding: 0 16px;
+}
+
+.paper-back-row {
+  margin-bottom: 16px;
+}
+
+.paper-back-btn {
+  padding: 8px 10px 8px 4px;
+  font-size: 15px;
+  color: var(--color-primary-hover, #0f766e);
+}
+
+.paper-back-btn:hover {
+  color: var(--color-primary, #0d9488);
+}
+
+.paper-back-icon {
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
 .el-radio-group {
   display: block;
 }

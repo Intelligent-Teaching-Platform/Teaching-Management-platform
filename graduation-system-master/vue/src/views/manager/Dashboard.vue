@@ -27,7 +27,7 @@
         </header>
 
     <template v-if="role === 'ADMIN'">
-      <div class="nine-grid nine-grid--admin">
+      <div ref="dashGridRef" class="nine-grid nine-grid--admin">
         <!-- 第一行：KPI 收窄；两侧图表等宽，避免「数字卡与图」抢同宽 -->
         <el-card class="grid-block dash-card" shadow="never">
           <template #header><div class="card-header">数据概览</div></template>
@@ -64,7 +64,7 @@
         <!-- 第二行 -->
         <el-card class="grid-block dash-card dash-card--scroll-inner" shadow="never">
           <template #header><div class="card-header">学生作业完成率 Top10</div></template>
-          <div ref="adminProgressScrollEl" class="progress-list dash-scroll-y">
+          <div ref="adminProgressScrollEl" class="progress-list dash-scroll-y dash-scroll-y--fill">
             <div v-for="s in main.left3" :key="s.studentId" class="progress-item">
               <div class="progress-meta">
                 <span class="progress-name">{{ s.studentName }}（{{ s.code || '—' }}）</span>
@@ -80,7 +80,7 @@
 
         <el-card class="grid-block dash-card dash-card--scroll-inner" shadow="never">
           <template #header><div class="card-header">课程概览（最近）</div></template>
-          <div ref="adminCourseOverviewScrollEl" class="dash-scroll-y dash-recent-table-scroll">
+          <div ref="adminCourseOverviewScrollEl" class="dash-scroll-y dash-scroll-y--fill dash-recent-table-scroll">
             <el-table :data="main.mid2" size="small" class="dark-table" style="width: 100%">
               <el-table-column prop="courseName" label="课程" min-width="140" />
               <el-table-column prop="teacherName" label="教师" width="90" />
@@ -114,7 +114,7 @@
 
         <el-card class="grid-block dash-card bottom-block dash-card--scroll-inner" shadow="never">
           <template #header><div class="card-header">近期作业记录</div></template>
-          <div ref="adminRecentWorkScrollEl" class="dash-scroll-y dash-recent-table-scroll">
+          <div ref="adminRecentWorkScrollEl" class="dash-scroll-y dash-scroll-y--fill dash-recent-table-scroll">
             <el-table :data="main.right3" size="small" class="dark-table" style="width: 100%">
               <el-table-column prop="studentName" label="学生" width="90" />
               <el-table-column prop="workName" label="作业" min-width="140" show-overflow-tooltip />
@@ -126,7 +126,7 @@
     </template>
 
     <template v-else-if="role === 'TEACHER'">
-      <div class="nine-grid">
+      <div ref="dashGridRef" class="nine-grid">
         <!-- 第一行 -->
         <el-card class="grid-block dash-card" shadow="never">
           <template #header><div class="card-header">数据概览</div></template>
@@ -153,7 +153,7 @@
 
         <el-card class="grid-block dash-card dash-card--scroll-inner" shadow="never">
           <template #header><div class="card-header">课程上课时间地点（本教师）</div></template>
-          <div ref="teacherCourseTimeScrollEl" class="course-time-location-cards dash-scroll-y">
+          <div ref="teacherCourseTimeScrollEl" class="course-time-location-cards dash-scroll-y dash-scroll-y--fill">
             <div
               v-for="c in screen.mid1"
               :key="c.courseId ?? c.courseName"
@@ -177,7 +177,7 @@
         <!-- 第二行 -->
         <el-card class="grid-block dash-card dash-card--scroll-inner" shadow="never">
           <template #header><div class="card-header">学生作业完成率 Top10</div></template>
-          <div ref="teacherProgressScrollEl" class="progress-list dash-scroll-y">
+          <div ref="teacherProgressScrollEl" class="progress-list dash-scroll-y dash-scroll-y--fill">
             <div v-for="s in screen.left3" :key="s.studentId" class="progress-item">
               <div class="progress-meta">
                 <span class="progress-name">{{ s.studentName }}（{{ s.code || '—' }}）</span>
@@ -191,64 +191,64 @@
           </div>
         </el-card>
 
-        <el-card class="grid-block dash-card" shadow="never">
+        <el-card class="grid-block dash-card dash-card--scroll-inner" shadow="never">
           <template #header><div class="card-header">课程概览</div></template>
-          <el-table :data="screen.mid2" size="small" class="dark-table" style="width: 100%">
-            <el-table-column prop="courseName" label="课程" min-width="140" />
-            <el-table-column prop="clazzName" label="班级" width="110" />
-            <el-table-column prop="studentCount" label="学生数" width="80" />
-            <el-table-column prop="taskCount" label="任务数" width="80" />
-          </el-table>
+          <div ref="teacherCourseOverviewScrollEl" class="dash-scroll-y dash-scroll-y--fill dash-recent-table-scroll">
+            <el-table :data="screen.mid2" size="small" class="dark-table" style="width: 100%">
+              <el-table-column prop="courseName" label="课程" min-width="140" />
+              <el-table-column prop="clazzName" label="班级" width="110" />
+              <el-table-column prop="studentCount" label="学生数" width="80" />
+              <el-table-column prop="taskCount" label="任务数" width="80" />
+            </el-table>
+          </div>
         </el-card>
 
         <el-card class="grid-block dash-card signin-pie-card dash-card--scroll-inner" shadow="never">
           <template #header><div class="card-header">签到情况（饼图）</div></template>
 
-          <div class="signin-pie-wrap">
-            <div ref="screenRight1Ref" class="chart signin-chart" />
+          <div class="signin-pie-outer">
+            <div class="signin-pie-wrap">
+              <div ref="screenRight1Ref" class="chart signin-chart" />
 
-            <div class="signin-names">
-              <div class="signin-col">
-                <div class="signin-col-title">
-                  已签到（{{ screen.right1?.signedCount ?? 0 }}）
-                </div>
-                <div
-                  ref="signinSignedScrollEl"
-                  class="signin-tags signin-tags--list dash-scroll-y"
-                >
-                  <el-tag
-                    v-for="(n, idx) in signedNameList"
-                    :key="'signed-' + idx + '-' + n"
-                    type="success"
-                    size="small"
-                    effect="light"
-                    class="signin-tag"
+              <div class="signin-names">
+                <div class="signin-col">
+                  <div class="signin-col-title">
+                    已签到（{{ screen.right1?.signedCount ?? 0 }}）
+                  </div>
+                  <div
+                    ref="signinSignedScrollEl"
+                    class="signin-name-list dash-scroll-y dash-scroll-y--fill"
                   >
-                    {{ n }}
-                  </el-tag>
-                  <div v-if="signedNameList.length === 0" class="signin-empty">-</div>
+                    <div
+                      v-for="(n, idx) in signedNameList"
+                      :key="'signed-' + idx + '-' + n"
+                      class="signin-name-line signin-name-line--signed"
+                      :title="n"
+                    >
+                      {{ n }}
+                    </div>
+                    <div v-if="signedNameList.length === 0" class="signin-empty">-</div>
+                  </div>
                 </div>
-              </div>
 
-              <div class="signin-col">
-                <div class="signin-col-title">
-                  未签到（{{ screen.right1?.unsignedCount ?? 0 }}）
-                </div>
-                <div
-                  ref="signinUnsignedScrollEl"
-                  class="signin-tags signin-tags--list signin-tags--unsigned dash-scroll-y"
-                >
-                  <el-tag
-                    v-for="(n, idx) in unsignedNameList"
-                    :key="'unsigned-' + idx + '-' + n"
-                    type="info"
-                    size="small"
-                    effect="light"
-                    class="signin-tag"
+                <div class="signin-col">
+                  <div class="signin-col-title">
+                    未签到（{{ screen.right1?.unsignedCount ?? 0 }}）
+                  </div>
+                  <div
+                    ref="signinUnsignedScrollEl"
+                    class="signin-name-list dash-scroll-y dash-scroll-y--fill"
                   >
-                    {{ n }}
-                  </el-tag>
-                  <div v-if="unsignedNameList.length === 0" class="signin-empty">-</div>
+                    <div
+                      v-for="(n, idx) in unsignedNameList"
+                      :key="'unsigned-' + idx + '-' + n"
+                      class="signin-name-line signin-name-line--unsigned"
+                      :title="n"
+                    >
+                      {{ n }}
+                    </div>
+                    <div v-if="unsignedNameList.length === 0" class="signin-empty">-</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -263,14 +263,17 @@
           </div>
         </el-card>
 
-        <el-card class="grid-block dash-card bottom-block" shadow="never">
+        <el-card class="grid-block dash-card bottom-block dash-card--scroll-inner" shadow="never">
           <template #header><div class="card-header">实验作业相似度预警</div></template>
           <div class="similarity-alert">
             <div class="similarity-header">
               阈值：{{ screen.right2.threshold ?? 0 }}%
             </div>
 
-            <div class="similarity-list">
+            <div
+              ref="teacherSimilarityScrollEl"
+              class="similarity-list dash-scroll-y dash-scroll-y--fill"
+            >
               <div
                 v-for="s in screen.right2.highSimilarityList || []"
                 :key="s.studentId ?? s.studentName"
@@ -609,7 +612,7 @@ const screenMid3Ref = ref()
 const screenRight1Ref = ref()
 const screenRight3Ref = ref()
 
-/** 卡片内列表自动滚动（管理员 Top10 / 教师课程时间地点、Top10、签到名单） */
+/** 卡片内列表自动滚动（管理员：Top10·课程表·作业；教师：时间地点·Top10·课程表·签到名单·相似度预警；雷达图不参与） */
 const adminProgressScrollEl = ref(null)
 const adminCourseOverviewScrollEl = ref(null)
 const adminRecentWorkScrollEl = ref(null)
@@ -617,10 +620,23 @@ const adminRadarScrollEl = ref(null)
 const teacherRadarScrollEl = ref(null)
 const teacherCourseTimeScrollEl = ref(null)
 const teacherProgressScrollEl = ref(null)
+const teacherCourseOverviewScrollEl = ref(null)
 const signinSignedScrollEl = ref(null)
 const signinUnsignedScrollEl = ref(null)
+const teacherSimilarityScrollEl = ref(null)
+const dashGridRef = ref(null)
 
 let dashAutoScrollTeardowns = []
+let dashGridResizeObserver = null
+let autoScrollDebounceTimer = null
+
+function scheduleSetupDashAutoScrolls() {
+  if (autoScrollDebounceTimer != null) window.clearTimeout(autoScrollDebounceTimer)
+  autoScrollDebounceTimer = window.setTimeout(() => {
+    autoScrollDebounceTimer = null
+    void setupDashAutoScrolls()
+  }, 200)
+}
 
 function teardownDashAutoScrolls() {
   dashAutoScrollTeardowns.forEach((fn) => {
@@ -633,20 +649,20 @@ function teardownDashAutoScrolls() {
   dashAutoScrollTeardowns = []
 }
 
-function bindAutoVerticalScroll(el, speed = 0.18) {
+function bindAutoVerticalScroll(el, speed = 0.32) {
   if (!el || el.nodeType !== 1) return null
-  
-  // 检查是否有滚动条（内容高度大于容器高度）
-  const sh = el.scrollHeight
-  const ch = el.clientHeight
-  if (sh <= ch + 2) {
-    // 没有滚动条，不需要自动滚动
-    console.log('Auto scroll skipped: no overflow', el.className, 'scrollHeight:', sh, 'clientHeight:', ch)
+
+  const getStyle = () => window.getComputedStyle(el)
+  const canScroll = () => {
+    const st = getStyle()
+    const y = st.overflowY
+    if (y !== 'auto' && y !== 'scroll' && y !== 'overlay') return false
+    return el.scrollHeight > el.clientHeight + 2
+  }
+  if (!canScroll()) {
     return null
   }
-  
-  console.log('Auto scroll enabled:', el.className, 'scrollHeight:', sh, 'clientHeight:', ch)
-  
+
   let raf = 0
   let paused = false
   let stopped = false
@@ -657,12 +673,12 @@ function bindAutoVerticalScroll(el, speed = 0.18) {
       raf = requestAnimationFrame(step)
       return
     }
-    const sh = el.scrollHeight
-    const ch = el.clientHeight
-    if (sh <= ch + 2) {
+    if (!canScroll()) {
       raf = requestAnimationFrame(step)
       return
     }
+    const sh = el.scrollHeight
+    const ch = el.clientHeight
     el.scrollTop += speed
     if (el.scrollTop >= sh - ch - 2) el.scrollTop = 0
     raf = requestAnimationFrame(step)
@@ -690,36 +706,26 @@ function bindAutoVerticalScroll(el, speed = 0.18) {
 async function setupDashAutoScrolls() {
   teardownDashAutoScrolls()
   await nextTick()
-  // 延迟一点确保 DOM 完全渲染
-  await new Promise((r) => setTimeout(r, 500))
+  await new Promise((r) => requestAnimationFrame(r))
+  await new Promise((r) => requestAnimationFrame(r))
+  await new Promise((r) => setTimeout(r, 120))
   const nodes = []
   if (role === 'ADMIN') {
     if (adminProgressScrollEl.value) nodes.push(adminProgressScrollEl.value)
-    // el-table 的滚动在 .el-table__body-wrapper 上
-    if (adminCourseOverviewScrollEl.value) {
-      const tableWrapper = adminCourseOverviewScrollEl.value.querySelector('.el-table__body-wrapper')
-      if (tableWrapper) nodes.push(tableWrapper)
-    }
-    if (adminRecentWorkScrollEl.value) {
-      const tableWrapper = adminRecentWorkScrollEl.value.querySelector('.el-table__body-wrapper')
-      if (tableWrapper) nodes.push(tableWrapper)
-    }
-    if (adminRadarScrollEl.value) nodes.push(adminRadarScrollEl.value)
+    if (adminCourseOverviewScrollEl.value) nodes.push(adminCourseOverviewScrollEl.value)
+    if (adminRecentWorkScrollEl.value) nodes.push(adminRecentWorkScrollEl.value)
   }
   if (role === 'TEACHER') {
     if (teacherCourseTimeScrollEl.value) nodes.push(teacherCourseTimeScrollEl.value)
     if (teacherProgressScrollEl.value) nodes.push(teacherProgressScrollEl.value)
-    if (teacherRadarScrollEl.value) nodes.push(teacherRadarScrollEl.value)
+    if (teacherCourseOverviewScrollEl.value) nodes.push(teacherCourseOverviewScrollEl.value)
     if (signinSignedScrollEl.value) nodes.push(signinSignedScrollEl.value)
     if (signinUnsignedScrollEl.value) nodes.push(signinUnsignedScrollEl.value)
+    if (teacherSimilarityScrollEl.value) nodes.push(teacherSimilarityScrollEl.value)
   }
-  console.log('Setting up auto scroll for', nodes.length, 'elements')
   nodes.forEach((el) => {
     const off = bindAutoVerticalScroll(el)
-    if (off) {
-      dashAutoScrollTeardowns.push(off)
-      console.log('Auto scroll bound to:', el.className)
-    }
+    if (off) dashAutoScrollTeardowns.push(off)
   })
 }
 
@@ -931,7 +937,7 @@ const handleResize = () => {
   viewport.h = window.innerHeight
   stageScale.value = enableScale.value ? Math.min(viewport.w / DESIGN_W, viewport.h / DESIGN_H) : 1
   resizeAllCharts()
-  void setupDashAutoScrolls()
+  scheduleSetupDashAutoScrolls()
 }
 
 const loadAdmin = async () => {
@@ -1000,6 +1006,7 @@ const loadAdmin = async () => {
     renderRadar(chartMainMid3, main.mid3, '')
     renderPie(chartMainRight1, main.right1, '')
     await setupDashAutoScrolls()
+    scheduleSetupDashAutoScrolls()
   } catch (error) {
     console.error('加载管理员数据时发生错误:', error)
   }
@@ -1093,6 +1100,7 @@ const loadTeacher = async () => {
     renderSigninPie(chartScreenRight1, pieData, '')
     renderLine(chartScreenRight3, screen.right3, '')
     await setupDashAutoScrolls()
+    scheduleSetupDashAutoScrolls()
   } catch (error) {
     console.error('加载教师数据时发生错误:', error)
   }
@@ -1115,10 +1123,23 @@ onMounted(async () => {
   await nextTick()
   resizeAllCharts()
   await setupDashAutoScrolls()
+  scheduleSetupDashAutoScrolls()
+  if (typeof ResizeObserver !== 'undefined' && dashGridRef.value) {
+    dashGridResizeObserver = new ResizeObserver(() => scheduleSetupDashAutoScrolls())
+    dashGridResizeObserver.observe(dashGridRef.value)
+  }
 })
 
 onBeforeUnmount(() => {
   teardownDashAutoScrolls()
+  if (dashGridResizeObserver) {
+    dashGridResizeObserver.disconnect()
+    dashGridResizeObserver = null
+  }
+  if (autoScrollDebounceTimer != null) {
+    window.clearTimeout(autoScrollDebounceTimer)
+    autoScrollDebounceTimer = null
+  }
   window.removeEventListener('resize', handleResize)
   disposeCharts()
 })
@@ -1445,8 +1466,6 @@ onBeforeUnmount(() => {
   padding-right: 6px;
   flex: 1 1 auto;
   min-height: 0;
-  max-height: 260px;
-  overflow-y: auto;
   scrollbar-width: thin;
   -webkit-overflow-scrolling: touch;
 }
@@ -1489,9 +1508,11 @@ onBeforeUnmount(() => {
 }
 
 /* 由内层 .dash-scroll-y 承担滚动，避免与卡片 body 双滚动条 */
+/* flex-basis:0 才能让子项在 flex 布局下低于内容高度，从而出现 overflow 与自动滚动 */
 .grid-block.dash-card--scroll-inner :deep(.el-card__body) {
   overflow: hidden;
   min-height: 0;
+  flex: 1 1 0;
 }
 
 .dash-scroll-y {
@@ -1502,6 +1523,13 @@ onBeforeUnmount(() => {
   min-height: 0;
   scrollbar-width: thin;
   -webkit-overflow-scrolling: touch;
+}
+
+/* 栅格卡片内铺满剩余高度，内容超出时纵向滚动（Top10 / 课程表 / 作业记录 / 签到整卡） */
+.dash-scroll-y.dash-scroll-y--fill {
+  max-height: none;
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 .dash-scroll-y::-webkit-scrollbar {
@@ -1587,7 +1615,7 @@ onBeforeUnmount(() => {
   height: var(--dash-chart-pie-h);
 }
 
-/* 签到卡：列表由内层 dash-scroll-y 自动滚动；禁止横向滚动 */
+/* 签到卡：左侧饼图与标题固定，仅两侧名单区域独立纵向滚动 */
 .signin-pie-card :deep(.el-card__body) {
   overflow-x: hidden;
   overflow-y: hidden;
@@ -1598,11 +1626,19 @@ onBeforeUnmount(() => {
   overflow-y: hidden;
 }
 
+.signin-pie-outer {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .signin-pie-wrap {
   display: flex;
   gap: 12px;
-  align-items: flex-start;
-  flex: 1 1 auto;
+  align-items: stretch;
+  flex: 1 1 0;
   min-height: 0;
   width: 100%;
   min-width: 0;
@@ -1614,6 +1650,7 @@ onBeforeUnmount(() => {
 .signin-chart {
   --signin-pie-size: min(148px, 36vw);
   flex: 0 0 auto;
+  align-self: flex-start;
   width: var(--signin-pie-size);
   min-width: var(--signin-pie-size);
   max-width: min(168px, 40vw);
@@ -1622,21 +1659,18 @@ onBeforeUnmount(() => {
 }
 
 .signin-names {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
-  max-width: none;
-  width: auto;
   display: flex;
   gap: 12px;
-  justify-content: flex-start;
+  justify-content: stretch;
+  align-items: stretch;
   min-height: 0;
-  overflow: hidden;
 }
 
 .signin-col {
   flex: 1 1 0;
   min-width: 0;
-  max-width: none;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -1651,65 +1685,43 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.signin-tags {
+/* 单列纵向列表：仅此处 overflow；每人单行一条，过长省略号 */
+.signin-name-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-right: 6px;
-  flex: 0 1 auto;
-  align-content: flex-start;
-  overflow: visible;
-}
-
-/* 签到名单：标题固定，仅此处纵向滚动；每行两个 */
-.signin-tags.signin-tags--list {
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  align-content: flex-start;
-  flex: 1 1 auto;
-  min-height: 0;
-  gap: 6px;
+  flex-direction: column;
+  gap: 4px;
   padding-right: 4px;
 }
 
-.signin-tags.signin-tags--list.dash-scroll-y {
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-.signin-tags.signin-tags--list :deep(.signin-tag) {
-  flex: 0 0 calc(50% - 3px);
-  width: calc(50% - 3px);
-  max-width: none;
-  height: auto !important;
-  min-height: 26px;
-  margin: 0;
-  justify-content: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.signin-name-line {
+  flex-shrink: 0;
+  width: 100%;
   box-sizing: border-box;
-  font-size: 11px;
-  padding: 0 4px;
-}
-
-.signin-tags.signin-tags--list :deep(.signin-tag .el-tag__content) {
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.signin-tag {
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.signin-name-line--signed {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.signin-name-line--unsigned {
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.35);
 }
 
 .signin-empty {
   font-size: 12px;
   color: var(--color-text-muted);
+  padding: 4px 0;
 }
 
 .course-time-location-cards {
@@ -1822,17 +1834,17 @@ onBeforeUnmount(() => {
 }
 
 .similarity-header {
+  flex-shrink: 0;
   font-size: 13px;
   color: var(--color-text-muted);
 }
 
+/* 阈值行固定，列表区单独滚动并参与自动滚动 */
 .similarity-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
   padding-right: 4px;
-  flex: 0 0 auto;
-  overflow: visible;
 }
 
 .similarity-item {
