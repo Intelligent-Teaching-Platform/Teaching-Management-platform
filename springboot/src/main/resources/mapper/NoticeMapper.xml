@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.NoticeMapper">
+
+
+    <insert id="insert" parameterType="com.example.entity.Notice" useGeneratedKeys="true">
+        insert into notice(id,title, content, time)
+        values (#{id}, #{title}, #{content}, #{time})
+    </insert>
+
+    <update id="updateById" parameterType="com.example.entity.Notice">
+        update notice set title = #{title}, content = #{content}, time = #{time}
+        where id = #{id} 
+    </update>
+
+</mapper>

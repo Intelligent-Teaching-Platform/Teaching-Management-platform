@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.ChoiceMapper">
+
+
+    <insert id="insert" parameterType="com.example.entity.Choice" useGeneratedKeys="true" keyProperty="id">
+        insert into choice(name, teacher_id, student_id, course_id)
+        values (#{name}, #{teacherId}, #{studentId}, #{courseId})
+    </insert>
+
+    <update id="updateById" parameterType="com.example.entity.Choice">
+        update choice set name = #{name}, teacher_id = #{teacherId}, student_id = #{studentId}, course_id = #{courseId}
+        where id = #{id}
+    </update>
+
+    <!-- 批量插入选课记录 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO choice (course_id, student_id, name, teacher_id, college_id, class_id)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.courseId}, #{item.studentId}, #{item.name}, #{item.teacherId}, #{item.collegeId}, #{item.classId})
+        </foreach>
+    </insert>
+
+</mapper>
+

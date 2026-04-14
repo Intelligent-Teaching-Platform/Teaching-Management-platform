@@ -1,0 +1,1 @@
+import{_ as o}from"../assets/index-a4ebc030.js";import"./vue-vendor-83b5f85a.js";import"./element-plus-39b2ec6e.js";const t={name:"NotFound.vue"};function n(r,e,s,c,p,_){return null}const f=o(t,[["render",n]]);export{f as default};

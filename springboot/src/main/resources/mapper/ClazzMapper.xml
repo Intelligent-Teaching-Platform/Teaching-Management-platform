@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.ClazzMapper">
+
+
+    <insert id="insert" parameterType="com.example.entity.Clazz" useGeneratedKeys="true">
+        insert into clazz(id,name, teacher_id, create_time)
+        values (#{id}, #{name}, #{teacherId}, #{createTime})
+    </insert>
+
+    <update id="updateById" parameterType="com.example.entity.Clazz">
+        update clazz set name = #{name}, teacher_id = #{teacherId}, create_time = #{createTime}
+        where id = #{id}
+    </update>
+
+</mapper>

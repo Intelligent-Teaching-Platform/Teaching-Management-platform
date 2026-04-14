@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.StudentCourseMapper">
+
+    <!-- 基础ResultMap -->
+    <resultMap id="BaseResultMap" type="com.example.entity.StudentCourse">
+        <id column="id" property="id" />
+        <result column="student_id" property="studentId" />
+        <result column="course_id" property="courseId" />
+    </resultMap>
+
+    <!-- 通用查询字段 -->
+    <sql id="Base_Column_List">
+        id, student_id, course_id
+    </sql>
+
+    <select id="selectCount" resultType="int">
+        SELECT COUNT(*) FROM student_course
+        WHERE student_id = #{studentId} AND course_id = #{courseId}
+    </select>
+
+
+
+</mapper>

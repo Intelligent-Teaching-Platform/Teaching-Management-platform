@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.MaterialFolderMapper">
+    <insert id="insert" parameterType="com.example.entity.MaterialFolder" useGeneratedKeys="true" keyProperty="id">
+        insert into material_folder (name, course_id, parent_id, teacher_id, create_time)
+        values (#{name}, #{courseId}, #{parentId}, #{teacherId}, #{createTime, jdbcType=TIMESTAMP})
+    </insert>
+    <select id="selectByCourseId" resultType="com.example.entity.MaterialFolder">
+        select * from material_folder where course_id = #{courseId} order by create_time asc
+    </select>
+</mapper>

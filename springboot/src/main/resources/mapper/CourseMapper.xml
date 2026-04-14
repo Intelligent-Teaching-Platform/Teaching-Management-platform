@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.CourseMapper">
+
+
+        <insert id="insert" parameterType="com.example.entity.Course" useGeneratedKeys="true" keyProperty="id">
+            insert into course(name, content, score, teacher_id, num, time, location, college_id, already_num, class_id, term)
+            values (
+                       #{name},
+                       #{content},
+                       #{score},
+                       #{teacherId},
+                       #{num},
+                       #{time},
+                       #{location},
+                       #{collegeId},
+                       #{alreadyNum},
+                       #{classId},
+                    #{term}
+                   )
+        </insert>
+
+        <update id="updateById" parameterType="com.example.entity.Course">
+            update course set
+                              name = #{name},
+                              content = #{content},
+                              score = #{score},
+                              teacher_id = #{teacherId},
+                              num = #{num},
+                              time = #{time},
+                              location = #{location},
+                              college_id = #{collegeId},
+                              already_num = #{alreadyNum},
+                              class_id = #{classId},
+                              term = #{term}
+            where id = #{id}
+        </update>
+
+<!--    <insert id="batchInsert" parameterType="java.util.List">-->
+<!--        INSERT INTO course-->
+<!--        (name, content, score, teacher_id, num, time, location, college_id, class_id, already_num)-->
+<!--        VALUES-->
+<!--        <foreach collection="list" item="course" separator=",">-->
+<!--            (-->
+<!--            #{course.name},-->
+<!--            #{course.content},-->
+<!--            #{course.score},-->
+<!--            #{course.teacherId},-->
+<!--            #{course.num},-->
+<!--            #{course.time},-->
+<!--            #{course.location},-->
+<!--            #{course.collegeId},-->
+<!--            #{course.classId},-->
+<!--            #{course.alreadyNum}-->
+<!--            )-->
+<!--        </foreach>-->
+<!--    </insert>-->
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        <foreach collection="list" item="item" separator=";">
+            INSERT INTO course
+            (name, content, score, teacher_id, num, time, location, class_id, college_id, already_num, term)
+            VALUES
+            (
+            #{item.name},
+            #{item.content},
+            #{item.score},
+            #{item.teacherId},
+            #{item.num},
+            #{item.time},
+            #{item.location},
+            #{item.classId},
+            #{item.collegeId},
+            #{item.alreadyNum},
+             #{item.term}
+            )
+        </foreach>
+    </insert>
+
+
+
+    <!--course表与teacher表，college表，clazz表进行关联查询实现id与name进行转换 -->
+    <select id="selectPage" resultType="com.example.entity.Course">
+        SELECT
+        c.*,
+        t.name AS teacherName,
+        co.name AS collegeName,
+        clz.name AS className
+        FROM
+        course c
+        LEFT JOIN teacher t ON c.teacher_id = t.id
+        LEFT JOIN college co ON c.college_id = co.id
+        LEFT JOIN clazz clz ON c.class_id = clz.id
+        <where>
+            <if test="name != null and name != ''">
+                AND c.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+        </where>
+    </select>
+</mapper>
+

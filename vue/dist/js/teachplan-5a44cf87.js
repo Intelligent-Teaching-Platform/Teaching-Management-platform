@@ -1,0 +1,1 @@
+import{_ as t}from"../assets/index-a4ebc030.js";import"./vue-vendor-83b5f85a.js";import"./element-plus-39b2ec6e.js";const e={name:"teachplan"};function n(r,a,o,c,p,s){return null}const m=t(e,[["render",n]]);export{m as default};

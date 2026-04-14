@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.WorkMapper">
+
+
+    <insert id="insert" parameterType="com.example.entity.Work" useGeneratedKeys="true">
+        insert into work(id, name, content, file, score, teacher_id, student_id, state, scontent, amendment, teacher_comment, lab, tip1, tip2, tip3, tip4, tip5, tip6, tip7, tip8, tip9, experience, task_id, course_id, student_stage_title, student_stage_requirement, submit_phase, student_last_submit_time)
+        values (#{id}, #{name}, #{content}, #{file}, #{score}, #{teacherId}, #{studentId}, #{state}, #{scontent}, #{amendment}, #{teacherComment}, #{lab}, #{tip1}, #{tip2}, #{tip3}, #{tip4}, #{tip5}, #{tip6}, #{tip7}, #{tip8}, #{tip9}, #{experience}, #{taskId}, #{courseId}, #{studentStageTitle}, #{studentStageRequirement}, #{submitPhase},
+                case
+                    when #{lab} = 1 and (#{state} is null or #{state} = '') then now()
+                    else null
+                end)
+    </insert>
+
+    <update id="updateById" parameterType="com.example.entity.Work">
+        update work set name = #{name}, content = #{content}, file = #{file}, score = #{score}, teacher_id = #{teacherId}, student_id = #{studentId}, state = #{state}, scontent = #{scontent}, amendment=#{amendment}, teacher_comment=#{teacherComment}, lab=#{lab}, tip1=#{tip1}, tip2=#{tip2}, tip3=#{tip3}, tip4=#{tip4}, tip5=#{tip5}, tip6=#{tip6}, tip7=#{tip7}, tip8=#{tip8}, tip9=#{tip9}, experience=#{experience}, task_id=#{taskId}, course_id = case when #{courseId} is null then course_id else #{courseId} end, student_stage_title=#{studentStageTitle}, student_stage_requirement=#{studentStageRequirement}, submit_phase=#{submitPhase},
+        student_last_submit_time = case
+            when #{lab} = 2 and (#{state} is null or #{state} = '') then now()
+            else student_last_submit_time
+        end
+        where id = #{id}
+    </update>
+
+    <!-- 课后作业学生提交/修改：写入 student_last_submit_time -->
+    <update id="updateByIdOne" parameterType="com.example.entity.Work">
+        update work set
+        name = #{name},
+        content = #{content},
+        file = #{file},
+        score = #{score},
+        teacher_id = #{teacherId},
+        student_id = #{studentId},
+        state = #{state},
+        scontent = #{scontent},
+        amendment = #{amendment},
+        teacher_comment = #{teacherComment},
+        lab = #{lab},
+        tip1 = #{tip1},
+        tip2 = #{tip2},
+        tip3 = #{tip3},
+        tip4 = #{tip4},
+        tip5 = #{tip5},
+        tip6 = #{tip6},
+        tip7 = #{tip7},
+        tip8 = #{tip8},
+        tip9 = #{tip9},
+        experience = #{experience},
+        task_id = #{taskId},
+        course_id = case when #{courseId} is null then course_id else #{courseId} end,
+        student_stage_title = #{studentStageTitle},
+        student_stage_requirement = #{studentStageRequirement},
+        submit_phase = #{submitPhase},
+        student_last_submit_time = case
+            when #{lab} = 1 and (#{state} is null or #{state} = '') then now()
+            else student_last_submit_time
+        end
+        where id = #{id}
+    </update>
+
+</mapper>
