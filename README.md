@@ -95,4 +95,4 @@ mvn spring-boot:run
   教师： 2020111027 / 123456
   学生：20231101101 / 101101
 
-3. 访问地址：<https://luotongtong.xin>
+3. 访问地址：luotongtong.xin  (复制粘贴到浏览器访问)
