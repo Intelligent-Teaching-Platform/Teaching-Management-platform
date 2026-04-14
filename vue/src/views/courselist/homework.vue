@@ -5,8 +5,8 @@
         <div class="homework-title-main"></div>
       </div>
       <el-radio-group v-model="active" size="default" class="homework-switch" @change="onChange">
-        <el-radio-button label="courseware">课后作业</el-radio-button>
         <el-radio-button label="work">实验作业</el-radio-button>
+        <el-radio-button label="courseware">课后作业</el-radio-button>
       </el-radio-group>
     </div>
 
