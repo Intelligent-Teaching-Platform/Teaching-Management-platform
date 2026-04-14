@@ -5,10 +5,9 @@ server:
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: Root@123456
-#    Root@123456
-    url: jdbc:mysql://118.31.64.90:3306/tms?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8&allowPublicKeyRetrieval=true
+    username: root  #这里换成数据库账号
+    password: root #数据库密码
+    url: jdbc:mysql://localhost:3306/tms?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8&allowPublicKeyRetrieval=true
   servlet:
     multipart:
       max-file-size: 100MB
@@ -25,7 +24,7 @@ mybatis:
     map-underscore-to-camel-case: true
 
 # 文件上传的前缀url
-fileBaseUrl: http://118.31.64.90:9090
+fileBaseUrl: http://localhost:9090
 
 
 # JWT 配置
@@ -39,9 +38,3 @@ mybatis-plus:
   global-config:
     db-config:
       ddl-runner: false  # 禁用 DDL Runner
-
-
-
-
-
-
