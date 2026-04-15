@@ -102,6 +102,33 @@
         </div>
       </div>
 
+      <div class="smart-paste card-like" aria-label="智能粘贴">
+        <div class="smart-paste__head">
+          <el-icon class="smart-paste__icon"><DocumentCopy /></el-icon>
+          <div class="smart-paste__titles">
+            <span class="smart-paste__title">智能粘贴</span>
+            <span class="smart-paste__desc">像填快递单一样：粘贴一整段文字，按「标签：内容」自动拆到下方表单</span>
+          </div>
+        </div>
+        <el-input
+          v-model="smartPasteText"
+          type="textarea"
+          :rows="6"
+          resize="vertical"
+          class="smart-paste__input"
+          placeholder="示例（每行一项；冒号后可换行写多行）：&#10;任务名称：第三次实验&#10;任务类型：实验任务&#10;班级：计科2201、软工2202&#10;上机地点：理工楼A301&#10;上机时间：2025-04-20 14:00:00&#10;上机内容：安装环境&#10;实验目的：掌握基本操作&#10;实验环境：Windows 11，Python 3.10&#10;阶段1：完成环境搭建&#10;阶段2：提交实验报告"
+        />
+        <div class="smart-paste__actions">
+          <el-button type="primary" :disabled="!smartPasteText.trim()" @click="applySmartPaste">
+            解析并填入表单
+          </el-button>
+          <el-button @click="smartPasteText = ''">清空粘贴区</el-button>
+        </div>
+        <p class="smart-paste__hint">
+          支持标签别名：如「名称」「类型」「地点」「时间」「实验目的」「阶段1 / 第2阶段 / q3」等；班级支持多个，用逗号或顿号分隔。
+        </p>
+      </div>
+
       <el-form class="drawer-form" :model="data.form" :rules="rules" ref="formRef" label-width="90px">
         <el-form-item label="任务名称" prop="name">
           <el-input
@@ -242,7 +269,7 @@
 import { reactive, ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus, List, DataAnalysis } from '@element-plus/icons-vue'
+import { Search, Plus, List, DataAnalysis, DocumentCopy } from '@element-plus/icons-vue'
 import TaskCard from '@/components/taskCard.vue'
 import request from '@/utils/request'
 
@@ -252,6 +279,7 @@ const formRef = ref(null)
 const loading = ref(false)
 const saving = ref(false)
 const searchQuery = ref('')
+const smartPasteText = ref('')
 
 const courseId = computed(() => {
   const id = route.query.id || route.params.id
@@ -437,6 +465,7 @@ const handleAdd = () => {
     ElMessage.warning('请先进入具体课程后再发布任务（需带上课程信息）')
     return
   }
+  smartPasteText.value = ''
   data.form = {
     courseId: courseId.value,
     classIds: [],
@@ -453,7 +482,226 @@ const handleAdd = () => {
   data.formVisible = true
 }
 
+/** 智能粘贴：从「标签：内容」文本中拆出键值对（冒号后为空则吞并后续行直到下一标签行） */
+function extractSmartPasteEntries(text) {
+  const lines = text.split(/\r?\n/)
+  const entries = []
+  let i = 0
+  while (i < lines.length) {
+    const line = lines[i]
+    const trimmed = line.trim()
+    if (!trimmed) {
+      i++
+      continue
+    }
+    const m = trimmed.match(/^(.{1,36})[：:]\s*(.*)$/)
+    if (!m) {
+      i++
+      continue
+    }
+    let keyHead = m[1].replace(/^[【\[\(（]/, '').replace(/[】\]\)）]$/, '').trim()
+    let val = m[2]
+    if (val === '') {
+      i++
+      const buf = []
+      while (i < lines.length) {
+        const L = lines[i]
+        const t = L.trim()
+        if (t && /^.{2,34}[：:]/.test(t)) break
+        buf.push(L)
+        i++
+      }
+      val = buf.join('\n').trim()
+    } else {
+      i++
+    }
+    entries.push([keyHead, val])
+  }
+  return entries
+}
+
+function normalizeSmartKeyLabel(s) {
+  return String(s || '')
+    .replace(/\s/g, '')
+    .replace(/^[【\[\(（]/, '')
+    .replace(/[】\]\)）]$/, '')
+}
+
+function parseLabFromText(val) {
+  const v = String(val || '')
+    .trim()
+    .toLowerCase()
+  if (/实验|上机|lab\s*2/.test(v)) return 2
+  if (/课后|作业|普通|lab\s*1/.test(v)) return 1
+  if (v === '1' || v === '2') return Number(v)
+  return null
+}
+
+function resolveClassIdsFromText(val, classData) {
+  const list = Array.isArray(classData) ? classData : []
+  if (!list.length || !String(val || '').trim()) return []
+  const parts = String(val)
+    .split(/[,，、;；\s]+/)
+    .map(s => s.trim())
+    .filter(Boolean)
+  const ids = []
+  for (const p of parts) {
+    const exact = list.find(c => c.name === p)
+    if (exact) {
+      ids.push(exact.id)
+      continue
+    }
+    const contains = list.find(c => c.name && (c.name.includes(p) || p.includes(c.name)))
+    if (contains) ids.push(contains.id)
+  }
+  return [...new Set(ids)]
+}
+
+function normalizeExperimentTimeString(val) {
+  const t = String(val || '').trim()
+  if (!t) return ''
+  if (/^\d{4}-\d{2}-\d{2}\s+\d{1,2}:\d{2}$/.test(t)) return `${t}:00`
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return `${t} 00:00:00`
+  return t
+}
+
+function tryParseStageIndex(keyNorm) {
+  let m = keyNorm.match(/^阶段(\d+)$/)
+  if (m) return Number(m[1])
+  m = keyNorm.match(/^第(\d+)阶段$/)
+  if (m) return Number(m[1])
+  m = keyNorm.match(/^q(\d+)$/i)
+  if (m) return Number(m[1])
+  m = keyNorm.match(/^题目(\d+)$/)
+  if (m) return Number(m[1])
+  m = keyNorm.match(/^实验阶段(\d+)$/)
+  if (m) return Number(m[1])
+  const cn = '一二三四五六七八九'.split('')
+  for (let i = 0; i < cn.length; i++) {
+    if (keyNorm === `阶段${cn[i]}` || keyNorm === `第${cn[i]}阶段`) return i + 1
+  }
+  return null
+}
+
+function fieldForSmartKey(keyRaw) {
+  const k = normalizeSmartKeyLabel(keyRaw)
+  if (!k) return null
+  const stageIdx = tryParseStageIndex(k)
+  if (stageIdx != null && stageIdx >= 1 && stageIdx <= 9) return { type: 'stage', index: stageIdx }
+  const synonyms = [
+    { keys: ['任务名称', '任务标题'], field: 'name' },
+    { keys: ['名称', '标题'], field: 'name', exact: true },
+    { keys: ['任务类型'], field: 'lab' },
+    { keys: ['类型'], field: 'lab', exact: true },
+    { keys: ['发放班级', '面向班级', '选课班级', '上课班级'], field: 'classIds' },
+    { keys: ['班级'], field: 'classIds', exact: true },
+    { keys: ['上机地点', '实验室', '机房'], field: 'place' },
+    { keys: ['地点'], field: 'place', exact: true },
+    { keys: ['上机时间', '实验时间', '上课时间'], field: 'experimentTime' },
+    { keys: ['时间'], field: 'experimentTime', exact: true },
+    { keys: ['上机内容', '上机安排'], field: 'experimentContent' },
+    { keys: ['实验目的及要求', '实验目的', '目的及要求'], field: 'experimentPurpose' },
+    { keys: ['实验要求'], field: 'experimentPurpose', exact: true },
+    { keys: ['实验环境及要求', '实验环境', '环境及要求', '软硬件环境'], field: 'experimentEnvironment' },
+    { keys: ['任务内容', '内容描述', '作业内容', '课后内容'], field: 'content' },
+    { keys: ['内容'], field: 'content', exact: true },
+  ]
+  const keyMatches = (x, exact) => {
+    if (k === x) return true
+    if (exact) return false
+    if (x.length >= 4 && (k.includes(x) || x.includes(k))) return true
+    return false
+  }
+  for (const row of synonyms) {
+    const exact = row.exact === true
+    if (row.keys.some(x => keyMatches(x, exact))) {
+      return { type: 'scalar', field: row.field }
+    }
+  }
+  return null
+}
+
+function applySmartPaste() {
+  const raw = smartPasteText.value.trim()
+  if (!raw) {
+    ElMessage.warning('请先粘贴文字')
+    return
+  }
+  const entries = extractSmartPasteEntries(raw)
+  if (!entries.length) {
+    ElMessage.warning('未识别到「标签：内容」格式，请检查是否使用中文或英文冒号')
+    return
+  }
+  const applied = []
+  const stages = {}
+
+  for (const [keyRaw, val] of entries) {
+    const mapped = fieldForSmartKey(keyRaw)
+    if (!mapped) continue
+    if (mapped.type === 'stage') {
+      const idx = mapped.index
+      if (val) stages[idx] = val
+      continue
+    }
+    const field = mapped.field
+    if (field === 'lab') {
+      const lab = parseLabFromText(val)
+      if (lab != null) {
+        data.form.lab = lab
+        applied.push('任务类型')
+      }
+      continue
+    }
+    if (field === 'classIds') {
+      const ids = resolveClassIdsFromText(val, data.classData)
+      if (ids.length) {
+        data.form.classIds = ids
+        applied.push(`班级（${ids.length}个）`)
+      }
+      continue
+    }
+    if (field === 'experimentTime') {
+      data.form.experimentTime = normalizeExperimentTimeString(val)
+      applied.push('上机时间')
+      continue
+    }
+    data.form[field] = val
+    const labelMap = {
+      name: '任务名称',
+      place: '上机地点',
+      experimentContent: '上机内容',
+      experimentPurpose: '实验目的',
+      experimentEnvironment: '实验环境',
+      content: '任务内容',
+    }
+    if (labelMap[field]) applied.push(labelMap[field])
+  }
+
+  const stageKeys = Object.keys(stages)
+    .map(Number)
+    .filter(n => n >= 1 && n <= 9)
+    .sort((a, b) => a - b)
+  if (stageKeys.length) {
+    if (!data.form.questions) data.form.questions = []
+    const maxI = Math.min(9, Math.max(...stageKeys))
+    const next = []
+    for (let i = 1; i <= maxI; i++) {
+      const text = stages[i] || ''
+      if (text) next.push({ id: i, question: text })
+    }
+    data.form.questions = next
+    applied.push(`实验阶段（${next.length}段）`)
+  }
+
+  if (!applied.length) {
+    ElMessage.warning('没有匹配到已知字段，请对照示例检查标签写法')
+    return
+  }
+  ElMessage.success(`已填入：${[...new Set(applied)].join('、')}`)
+}
+
 const handleEdit = (row) => {
+  smartPasteText.value = ''
   data.form = JSON.parse(JSON.stringify(row))
   // 确保lab字段是数字类型（用于正确显示实验任务表单）
   if (data.form.lab != null) {
@@ -843,6 +1091,79 @@ onMounted(() => {
 .drawer-hero-sub {
   margin-top: 4px;
   font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+.smart-paste {
+  margin-bottom: 14px;
+  padding: 12px 14px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 22%, var(--color-border));
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--color-primary-soft) 55%, var(--color-bg-elevated)) 0%,
+    var(--color-bg-elevated) 100%
+  );
+}
+
+.smart-paste.card-like {
+  box-shadow: 0 8px 24px -16px rgba(15, 23, 42, 0.12);
+}
+
+.smart-paste__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.smart-paste__icon {
+  flex-shrink: 0;
+  font-size: 22px;
+  color: var(--color-primary);
+  margin-top: 2px;
+}
+
+.smart-paste__titles {
+  min-width: 0;
+}
+
+.smart-paste__title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.smart-paste__desc {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+.smart-paste__input {
+  margin-bottom: 10px;
+}
+
+.smart-paste__input :deep(.el-textarea__inner) {
+  font-size: 12px;
+  line-height: 1.5;
+  font-family: var(--font-sans, system-ui, sans-serif);
+}
+
+.smart-paste__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.smart-paste__hint {
+  margin: 0;
+  font-size: 11px;
   color: var(--color-text-muted);
   line-height: 1.45;
 }
