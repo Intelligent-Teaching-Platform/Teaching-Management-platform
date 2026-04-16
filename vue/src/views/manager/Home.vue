@@ -69,6 +69,21 @@
           <img class="home-profile__banner-img" :src="imgBannerTech" alt="" width="1200" height="360" loading="lazy" decoding="async" />
           <span class="home-profile__banner-cap">课程 · 实验 · 成长</span>
         </div>
+        <div class="home-profile__mid" aria-label="常用跳转">
+          <p class="home-profile__mid-title">常用跳转</p>
+          <div class="home-profile__chips">
+            <button
+              v-for="s in profileShortcuts"
+              :key="s.path"
+              type="button"
+              class="home-profile__chip"
+              @click="go(s.path)"
+            >
+              {{ s.label }}
+            </button>
+          </div>
+          <p v-if="tickerText" class="home-profile__mid-note">{{ tickerText }}</p>
+        </div>
         <div class="home-profile__actions">
           <el-button type="primary" plain class="home-profile__btn" @click="go(personPath)">
             个人中心
@@ -196,10 +211,10 @@
             </div>
           </section>
 
-          <div v-if="tickerText" class="home-ticker card" role="status" aria-live="polite">
+          <!-- <div v-if="tickerText" class="home-ticker card" role="status" aria-live="polite">
             <span class="home-ticker__tag">动态</span>
             <span class="home-ticker__text">{{ tickerText }}</span>
-          </div>
+          </div> -->
         </div>
       </el-col>
     </el-row>
@@ -269,6 +284,24 @@ const quickLinks = computed(() => [
   { path: '/resource', label: '资源中心', icon: FolderOpened, tone: 'home-tile--amber' },
   courseEntry.value,
 ])
+
+/** 个人卡片内横幅与底部按钮之间的快捷入口（按角色） */
+const profileShortcuts = computed(() => {
+  const r = data.user.role
+  const tail = courseEntry.value
+  const common = [
+    { path: '/dashboard', label: '数据驾驶舱' },
+    { path: '/notice', label: '通知公告' },
+    { path: tail.path, label: tail.label },
+  ]
+  if (r === 'ADMIN') {
+    return [...common, { path: '/admin', label: '用户管理' }, { path: '/resource', label: '资源中心' }]
+  }
+  if (r === 'TEACHER' || r === 'STUDENT') {
+    return [...common, { path: '/resource', label: '资源中心' }]
+  }
+  return [...common, { path: '/resource', label: '资源中心' }]
+})
 
 const quickLinkCount = computed(() => quickLinks.value.length)
 
@@ -822,11 +855,85 @@ loadNotice()
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
+.home-profile__mid {
+  flex: 1;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 0 4px;
+}
+
+.home-profile__mid-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+.home-profile__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.home-profile__chip {
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-bg-elevated) 88%, var(--color-primary-soft));
+  color: var(--color-text);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    border-color var(--duration) var(--ease-out),
+    background-color var(--duration) var(--ease-out),
+    color var(--duration) var(--ease-out),
+    transform var(--duration) var(--ease-out);
+}
+
+.home-profile__chip:hover {
+  border-color: var(--color-primary-muted);
+  color: var(--color-primary-hover);
+  background: var(--color-primary-soft);
+}
+
+.home-profile__chip:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.home-profile__chip:active {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-profile__chip:active {
+    transform: none;
+  }
+}
+
+.home-profile__mid-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .home-profile__actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-  margin-top: auto;
+  flex-shrink: 0;
 }
 
 .home-profile__btn {

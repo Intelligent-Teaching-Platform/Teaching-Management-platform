@@ -171,7 +171,7 @@ const fileInput = ref(null);
 
 const data = reactive({
   pageNum: 1,
-  pageSize: 5,
+  pageSize: 10,
   total: 0,
   formVisible: false,
   form: {},

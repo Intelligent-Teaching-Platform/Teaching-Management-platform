@@ -2,7 +2,40 @@
   <div class="dashboard-page">
     <div class="dashboard-viewport">
       <div class="dashboard-stage" :class="{ 'is-scaled': enableScale }">
-        <header class="dashboard-hero card">
+        <header v-if="role === 'STUDENT'" class="student-dash-header card">
+          <div class="student-dash-header__inner">
+            <div class="student-dash-header__meta" role="group" aria-label="学生基本信息">
+              <div class="student-dash-kv">
+                <span class="student-dash-kv__k">姓名</span>
+                <span class="student-dash-kv__v">{{ studentProfile.name }}</span>
+              </div>
+              <div class="student-dash-kv">
+                <span class="student-dash-kv__k">专业</span>
+                <span class="student-dash-kv__v">{{ studentProfile.major }}</span>
+              </div>
+              <div class="student-dash-kv">
+                <span class="student-dash-kv__k">学号</span>
+                <span class="student-dash-kv__v">{{ studentProfile.code }}</span>
+              </div>
+            </div>
+            <div class="student-dash-header__aside">
+              <el-dropdown trigger="click" placement="bottom-end">
+                <button type="button" class="student-dash-credits">
+                  <span class="student-dash-credits__label">实践学分</span>
+                  <span class="student-dash-credits__value">{{ studentProfile.practiceEarned }}/{{ studentProfile.practiceTotal }}</span>
+                  <el-icon class="student-dash-credits__icon"><ArrowDown /></el-icon>
+                </button>
+                <template #dropdown>
+                  <el-dropdown-menu class="student-dash-credits-menu">
+                    <el-dropdown-item disabled>学分构成与明细待与教务系统对接</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
+          </div>
+        </header>
+
+        <header v-else class="dashboard-hero card">
           <div class="dashboard-hero__accent" aria-hidden="true" />
           <div class="dashboard-hero__icon" aria-hidden="true">
             <el-icon><DataBoard /></el-icon>
@@ -11,7 +44,6 @@
             <h1 class="dashboard-hero__title">统计驾驶舱</h1>
             <p v-if="role === 'ADMIN'" class="dashboard-hero__sub">管理员总览 · 关键指标与趋势一目掌握</p>
             <p v-else-if="role === 'TEACHER'" class="dashboard-hero__sub">教师看板 · 按课程查看班级与任务数据</p>
-            <p v-else-if="role === 'STUDENT'" class="dashboard-hero__sub">学习看板</p>
             <p v-else class="dashboard-hero__sub">当前角色暂无统计看板</p>
           </div>
           <div v-if="role === 'TEACHER'" class="dashboard-hero__actions">
@@ -312,8 +344,74 @@
     </template>
 
     <template v-else-if="role === 'STUDENT'">
-      <div class="dashboard-empty">
-        <el-empty description="学生个人学习统计暂未接入，请使用左侧「我学的课」「课程列表」查看课程与选课。" />
+      <div class="student-dash-main card">
+        <div class="student-dash-columns">
+          <section class="student-dash-col student-dash-col--timeline" aria-labelledby="student-journey-title">
+            <div class="student-dash-section-head">
+              <span id="student-journey-title" class="student-dash-section-head__title">学业时间轴</span>
+              <span class="student-dash-section-head__hint">课程与实践节点（演示数据）</span>
+            </div>
+
+            <div class="student-timeline">
+              <div
+                v-for="(segment, si) in studentJourney"
+                :key="segment.year"
+                class="student-timeline-seg"
+              >
+                <div class="student-timeline-year" :aria-label="segment.year">{{ segment.year }}</div>
+                <div class="student-timeline-body">
+                  <div class="student-timeline-line" aria-hidden="true" />
+                  <ul class="student-timeline-items">
+                    <li
+                      v-for="(node, ni) in segment.nodes"
+                      :key="`${si}-${ni}-${node.title}`"
+                      class="student-timeline-item"
+                    >
+                      <span class="student-timeline-dot" aria-hidden="true" />
+                      <div class="student-timeline-card">
+                        <span class="student-timeline-course">{{ node.title }}</span>
+                        <div v-if="(node.detailLines || []).length" class="student-timeline-detail">
+                          <p v-for="(line, li) in node.detailLines" :key="li">{{ line }}</p>
+                        </div>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="student-dash-col student-dash-col--growth" aria-labelledby="student-growth-title">
+            <div class="student-dash-section-head student-dash-section-head--stack">
+              <span id="student-growth-title" class="student-dash-section-head__title">能力成长曲线</span>
+              <span class="student-dash-section-head__hint student-growth__hint">
+                横轴与左侧「大一—大四」一致；仅右侧一条纵轴（综合能力 0–100）。实验报告提交数在悬停提示中查看（演示）
+              </span>
+            </div>
+            <div ref="studentGrowthChartRef" class="student-growth__chart" role="img" aria-label="能力与实验报告统计图" />
+          </section>
+
+          <aside class="student-dash-col student-dash-col--footprint" aria-labelledby="student-footprint-title">
+            <div class="student-dash-section-head student-dash-section-head--side">
+              <span id="student-footprint-title" class="student-dash-section-head__bar" aria-hidden="true" />
+              <span class="student-dash-section-head__title">学习足迹</span>
+            </div>
+            <p class="student-footprint__sub">按时间记录的学习行为（签到、作业等，演示数据）</p>
+            <ul class="student-footprint-feed" aria-label="学习行为时间线">
+              <li
+                v-for="(ev, ei) in studentFootprintEvents"
+                :key="`${ev.time}-${ev.tag}-${ei}`"
+                class="student-footprint-feed__item"
+              >
+                <time class="student-footprint-feed__time" :datetime="ev.iso">{{ ev.time }}</time>
+                <div class="student-footprint-feed__body">
+                  <span class="student-footprint-feed__tag" :class="`student-footprint-feed__tag--${ev.kind}`">{{ ev.tag }}</span>
+                  <span class="student-footprint-feed__detail">{{ ev.detail }}</span>
+                </div>
+              </li>
+            </ul>
+          </aside>
+        </div>
       </div>
     </template>
     <template v-else>
@@ -329,7 +427,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, nextTick, reactive, ref, watch } from 'vue'
 import * as echarts from 'echarts'
-import { DataBoard } from '@element-plus/icons-vue'
+import { ArrowDown, DataBoard } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import {
   mainLeft1,
@@ -356,6 +454,103 @@ const user = JSON.parse(localStorage.getItem('system-user') || '{}')
 const role = user?.role != null && String(user.role).trim() !== ''
   ? String(user.role).trim().toUpperCase()
   : ''
+
+/** 学生端：与登录信息对齐的展示字段（专业等后端未单独返回时用学院或占位） */
+const studentProfile = computed(() => {
+  const name = (user?.name || user?.username || '').trim() || '同学'
+  const code = (user?.code != null && String(user.code).trim() !== '') ? String(user.code).trim() : '—'
+  const majorRaw = user?.major || user?.specialityName || user?.collegeName
+  const major = (majorRaw != null && String(majorRaw).trim() !== '')
+    ? String(majorRaw).trim()
+    : '计算机科学与技术'
+  const scoreNum = Number(user?.score)
+  const practiceEarned = Number.isFinite(scoreNum) && scoreNum > 0 ? Math.round(scoreNum) : 128
+  return {
+    name,
+    code,
+    major,
+    practiceEarned,
+    practiceTotal: 150,
+  }
+})
+
+/**
+ * 学生端学业时间轴；与能力成长曲线共用 stage（year）维度。
+ * abilityIndex：演示用综合能力指数；labReports / homeworkDone：与本阶段课程相关的提交量（演示，可对接档案接口）
+ */
+const studentJourney = [
+  {
+    year: '大一',
+    abilityIndex: 42,
+    labReports: 4,
+    homeworkDone: 14,
+    nodes: [
+      {
+        title: '程序设计基础',
+        detailLines: ['得分: 92/100', '考核结果: 优秀', '本阶段实验报告: 2 份 · 课后作业: 6 次'],
+      },
+    ],
+  },
+  {
+    year: '大二',
+    abilityIndex: 55,
+    labReports: 7,
+    homeworkDone: 18,
+    nodes: [
+      {
+        title: '数字逻辑',
+        detailLines: ['项目类型: 课程实验', '考核结果: 优秀', '本阶段实验报告: 3 份 · 课后作业: 8 次'],
+      },
+    ],
+  },
+  {
+    year: '大三',
+    abilityIndex: 72,
+    labReports: 12,
+    homeworkDone: 22,
+    nodes: [
+      {
+        title: '计算机组成原理',
+        detailLines: ['项目类型: 团队项目', '考核结果: 良好', '实验报告: 4 份'],
+      },
+      {
+        title: '嵌入式与接口技术',
+        detailLines: ['项目类型: 团队项目', '考核结果: 良好', '实验报告: 5 份'],
+      },
+      {
+        title: '计算机组成与结构课程设计',
+        detailLines: ['项目类型: 团队项目', '考核结果: 良好', '综合报告: 3 份'],
+      },
+    ],
+  },
+  {
+    year: '大四',
+    abilityIndex: 81,
+    labReports: 15,
+    homeworkDone: 9,
+    nodes: [
+      {
+        title: '专业能力综合实训',
+        detailLines: ['阶段: 开题与中期', '考核结果: 进行中', '已交实训报告: 3 份'],
+      },
+    ],
+  },
+]
+
+/**
+ * 学习足迹：按时间倒序的行为记录（演示数据，可对接签到/作业/测验等接口）
+ * kind：用于标签配色 signin | homework | lab | quiz | resource | other
+ */
+const studentFootprintEvents = [
+  { iso: '2026-04-15T09:12:00', time: '04-15 09:12', tag: '签到', detail: '高等数学 · 第 8 周课堂', kind: 'signin' },
+  { iso: '2026-04-14T21:35:00', time: '04-14 21:35', tag: '提交作业', detail: '数据结构 · 第三章在线练习', kind: 'homework' },
+  { iso: '2026-04-14T18:20:00', time: '04-14 18:20', tag: '实验提交', detail: '计算机组成原理 · 实验三报告', kind: 'lab' },
+  { iso: '2026-04-13T16:05:00', time: '04-13 16:05', tag: '随堂测验', detail: '操作系统 · 进程调度小测', kind: 'quiz' },
+  { iso: '2026-04-12T14:40:00', time: '04-12 14:40', tag: '资源学习', detail: '已查看课件：嵌入式接口技术 Week6', kind: 'resource' },
+  { iso: '2026-04-11T08:58:00', time: '04-11 08:58', tag: '签到', detail: '大学英语 · 线下考勤', kind: 'signin' },
+  { iso: '2026-04-10T19:22:00', time: '04-10 19:22', tag: '提交作业', detail: '概率论 · 习题册 Batch-2', kind: 'homework' },
+  { iso: '2026-04-09T11:30:00', time: '04-09 11:30', tag: '讨论区回复', detail: '专业能力实训 · 开题答疑帖', kind: 'other' },
+]
 
 // cockpit scaling（双向适应：宽高同时约束等比缩放；小屏走响应式不缩放）
 const DESIGN_W = 1920
@@ -625,6 +820,7 @@ const signinSignedScrollEl = ref(null)
 const signinUnsignedScrollEl = ref(null)
 const teacherSimilarityScrollEl = ref(null)
 const dashGridRef = ref(null)
+const studentGrowthChartRef = ref(null)
 
 let dashAutoScrollTeardowns = []
 let dashGridResizeObserver = null
@@ -731,6 +927,7 @@ async function setupDashAutoScrolls() {
 
 let chartMainLeft2, chartMainMid1, chartMainMid3, chartMainRight1
 let chartScreenLeft2, chartScreenMid3, chartScreenRight1, chartScreenRight3
+let chartStudentGrowth
 
 const safeSet = (chart, option) => {
   if (!chart) return
@@ -743,6 +940,114 @@ const chartTitleStyle = { color: '#64748b', fontSize: 12, fontWeight: 600 }
 const axisLine = { lineStyle: { color: 'rgba(15, 23, 42, 0.12)' } }
 const axisLabel = { color: '#64748b', fontSize: 11 }
 const splitLine = { lineStyle: { color: 'rgba(15, 23, 42, 0.06)' } }
+
+const readCssColor = (name, fallback) => {
+  try {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+    return v || fallback
+  } catch (_) {
+    return fallback
+  }
+}
+
+const renderStudentGrowthCurve = () => {
+  if (!chartStudentGrowth) return
+  const primary = readCssColor('--color-primary', '#0d9488')
+  const primaryHover = readCssColor('--color-primary-hover', '#0f766e')
+  const segments = Array.isArray(studentJourney) ? studentJourney : []
+  const categories = segments.map((s) => s.year)
+  const ability = segments.map((s) => Number(s.abilityIndex ?? 0))
+  const labReports = segments.map((s) => Number(s.labReports ?? 0))
+  const homeworkDone = segments.map((s) => Number(s.homeworkDone ?? 0))
+  const courseCounts = segments.map((s) => (Array.isArray(s.nodes) ? s.nodes.length : 0))
+  chartStudentGrowth.setOption({
+    animationDuration: 480,
+    color: [primary],
+    legend: { show: false },
+    grid: {
+      left: 12,
+      right: 12,
+      top: 26,
+      bottom: 28,
+      containLabel: true,
+    },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(15, 23, 42, 0.92)',
+      borderWidth: 0,
+      textStyle: { color: '#f8fafc', fontSize: 12 },
+      axisPointer: { type: 'line', lineStyle: { color: `${primary}66`, width: 1 } },
+      formatter: (params) => {
+        const list = Array.isArray(params) ? params : [params]
+        if (!list.length) return ''
+        const idx = list[0].dataIndex
+        const stage = segments[idx]
+        if (!stage) return ''
+        const courses = (stage.nodes || []).map((n) => n.title).filter(Boolean)
+        const courseLine = courses.length ? `课程：${courses.join('、')}` : ''
+        const abilityVal = list[0].value != null ? list[0].value : ability[idx]
+        return [
+          `<div style="font-weight:700;margin-bottom:6px">${stage.year}（与左侧时间轴同阶段）</div>`,
+          `<div>${list[0].marker}综合能力（右侧纵轴）：<b>${abilityVal}</b></div>`,
+          `<div style="margin-top:6px;opacity:.95">实验报告累计提交：<b>${labReports[idx] ?? 0}</b> 份</div>`,
+          `<div style="opacity:.95">课后作业提交：<b>${homeworkDone[idx] ?? 0}</b> 次</div>`,
+          `<div style="opacity:.95">本阶段开课：<b>${courseCounts[idx] ?? 0}</b> 门</div>`,
+          courseLine ? `<div style="margin-top:4px;font-size:11px;opacity:.85;max-width:240px">${courseLine}</div>` : '',
+        ]
+          .filter(Boolean)
+          .join('<br/>')
+      },
+    },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: categories,
+      axisLine,
+      axisTick: { alignWithLabel: true },
+      axisLabel: {
+        ...axisLabel,
+        color: primaryHover,
+        fontWeight: 700,
+        fontSize: 11,
+        rotate: categories.length > 5 ? 24 : 0,
+      },
+    },
+    yAxis: {
+      type: 'value',
+      position: 'right',
+      name: '综合能力',
+      nameLocation: 'middle',
+      nameRotate: 90,
+      nameGap: 40,
+      min: 0,
+      max: 100,
+      splitNumber: 5,
+      axisLine: { show: false },
+      axisLabel: { ...axisLabel, color: primaryHover, margin: 10 },
+      splitLine,
+      nameTextStyle: { color: '#64748b', fontSize: 11, padding: [0, 0, 0, 4] },
+    },
+    series: [
+      {
+        name: '综合能力',
+        type: 'line',
+        smooth: 0.35,
+        symbol: 'circle',
+        symbolSize: 9,
+        showSymbol: true,
+        lineStyle: { width: 3, color: primary },
+        itemStyle: { color: '#fff', borderColor: primaryHover, borderWidth: 2 },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: `${primary}44` },
+            { offset: 1, color: `${primary}08` },
+          ]),
+        },
+        data: ability,
+      },
+    ],
+  }, true)
+}
 
 const renderBar = (chart, list, title) => {
   const x = list.map(i => i.name)
@@ -917,17 +1222,20 @@ const initCharts = async () => {
     chartScreenMid3 = echarts.init(screenMid3Ref.value)
     chartScreenRight1 = echarts.init(screenRight1Ref.value)
     chartScreenRight3 = echarts.init(screenRight3Ref.value)
+  } else if (role === 'STUDENT' && studentGrowthChartRef.value) {
+    chartStudentGrowth = echarts.init(studentGrowthChartRef.value)
   }
 }
 
 const disposeCharts = () => {
-  ;[chartMainLeft2, chartMainMid1, chartMainMid3, chartMainRight1, chartScreenLeft2, chartScreenMid3, chartScreenRight1, chartScreenRight3]
+  ;[chartMainLeft2, chartMainMid1, chartMainMid3, chartMainRight1, chartScreenLeft2, chartScreenMid3, chartScreenRight1, chartScreenRight3, chartStudentGrowth]
     .filter(Boolean)
     .forEach(c => c.dispose())
+  chartStudentGrowth = undefined
 }
 
 const resizeAllCharts = () => {
-  ;[chartMainLeft2, chartMainMid1, chartMainMid3, chartMainRight1, chartScreenLeft2, chartScreenMid3, chartScreenRight1, chartScreenRight3]
+  ;[chartMainLeft2, chartMainMid1, chartMainMid3, chartMainRight1, chartScreenLeft2, chartScreenMid3, chartScreenRight1, chartScreenRight3, chartStudentGrowth]
     .filter(Boolean)
     .forEach(c => c.resize())
 }
@@ -1119,6 +1427,12 @@ onMounted(async () => {
   } else if (role === 'TEACHER') {
     await loadTeacherCourses()
     await loadTeacher()
+  } else if (role === 'STUDENT') {
+    await nextTick()
+    if (!chartStudentGrowth && studentGrowthChartRef.value) {
+      chartStudentGrowth = echarts.init(studentGrowthChartRef.value)
+    }
+    renderStudentGrowthCurve()
   }
   await nextTick()
   resizeAllCharts()
@@ -1893,6 +2207,422 @@ onBeforeUnmount(() => {
   padding: 10px 2px;
 }
 
+/* —— 学生端：个人成长看板（与全局主色协调） —— */
+.student-dash-header {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 14px;
+  padding: 0;
+  border: none;
+  background: linear-gradient(
+    105deg,
+    var(--color-primary) 0%,
+    var(--color-primary-hover) 48%,
+    color-mix(in srgb, var(--color-primary) 72%, #0f172a) 100%
+  );
+  box-shadow:
+    0 18px 40px -22px color-mix(in srgb, var(--color-primary) 55%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--color-primary) 35%, transparent);
+}
+
+.student-dash-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+}
+
+.student-dash-header__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 28px;
+  min-width: 0;
+}
+
+.student-dash-kv {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(248, 250, 252, 0.92);
+}
+
+.student-dash-kv__k {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  opacity: 0.88;
+}
+
+.student-dash-kv__k::after {
+  content: '：';
+}
+
+.student-dash-kv__v {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+
+.student-dash-header__aside {
+  flex-shrink: 0;
+}
+
+.student-dash-credits {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background var(--duration) var(--ease-out),
+    border-color var(--duration) var(--ease-out);
+}
+
+.student-dash-credits:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.student-dash-credits__label {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.92;
+}
+
+.student-dash-credits__value {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.student-dash-credits__icon {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.student-dash-main {
+  padding: 0;
+  overflow: hidden;
+}
+
+.student-dash-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(220px, 1fr) minmax(240px, 1.05fr);
+  gap: 0;
+  min-height: min(640px, 72vh);
+  align-items: stretch;
+}
+
+.student-dash-col {
+  padding: 20px 22px 24px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.student-dash-col--timeline {
+  border-right: 1px solid var(--color-border);
+  background: linear-gradient(180deg, var(--color-bg-elevated) 0%, rgba(248, 250, 252, 0.65) 100%);
+}
+
+.student-dash-col--growth {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-right: 1px solid var(--color-border);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.55) 0%, var(--color-bg-elevated) 100%);
+}
+
+.student-growth__hint {
+  max-width: 42ch;
+  line-height: 1.45;
+}
+
+.student-dash-col--growth .student-growth__chart {
+  flex: 1;
+  min-height: min(280px, 36vh);
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 4px;
+}
+
+.student-dash-col--footprint {
+  background: var(--color-bg-elevated);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.student-dash-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.student-dash-section-head__title {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+.student-dash-section-head__hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.student-dash-section-head--side {
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.student-dash-section-head--stack {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.student-dash-section-head--stack .student-dash-section-head__hint {
+  margin-top: 0;
+}
+
+.student-dash-section-head__bar {
+  width: 4px;
+  height: 1.1em;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+}
+
+.student-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.student-timeline-seg {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.student-timeline-year {
+  flex-shrink: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: linear-gradient(145deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--color-primary) 65%, transparent);
+}
+
+.student-timeline-body {
+  position: relative;
+  padding-left: 14px;
+  min-width: 0;
+}
+
+.student-timeline-line {
+  position: absolute;
+  left: 5px;
+  top: 10px;
+  bottom: 8px;
+  width: 0;
+  border-left: 2px dashed color-mix(in srgb, var(--color-primary) 38%, var(--color-border));
+}
+
+.student-timeline-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.student-timeline-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.student-timeline-dot {
+  position: relative;
+  top: 8px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--color-primary-hover);
+  box-shadow: 0 0 0 3px var(--color-primary-soft);
+  z-index: 1;
+}
+
+.student-timeline-card {
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 10px 28px -22px rgba(15, 23, 42, 0.25);
+}
+
+.student-timeline-course {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+
+.student-timeline-detail {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.student-timeline-detail p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+}
+
+.student-timeline-detail p + p {
+  margin-top: 2px;
+}
+
+.student-growth__chart {
+  width: 100%;
+  height: min(240px, 28vh);
+  min-height: 200px;
+}
+
+.student-footprint__sub {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.student-footprint-feed {
+  list-style: none;
+  margin: 0;
+  padding: 12px 10px 14px;
+  max-height: min(720px, 70vh);
+  overflow-y: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 12%, var(--color-border));
+  background:
+    radial-gradient(100% 70% at 0% 0%, var(--color-primary-soft) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, rgba(241, 245, 249, 0.5) 100%);
+  scrollbar-gutter: stable;
+}
+
+.student-footprint-feed__item {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 10px 12px;
+  align-items: start;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.student-footprint-feed__item:last-child {
+  border-bottom: none;
+  padding-bottom: 4px;
+}
+
+.student-footprint-feed__time {
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-subtle);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.student-footprint-feed__body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.student-footprint-feed__tag {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  color: var(--color-text);
+}
+
+.student-footprint-feed__tag--signin {
+  color: #0f766e;
+  border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+  background: var(--color-primary-soft);
+}
+
+.student-footprint-feed__tag--homework {
+  color: #0369a1;
+  border-color: rgba(3, 105, 161, 0.28);
+  background: rgba(14, 165, 233, 0.12);
+}
+
+.student-footprint-feed__tag--lab {
+  color: #b45309;
+  border-color: rgba(217, 119, 6, 0.35);
+  background: rgba(217, 119, 6, 0.1);
+}
+
+.student-footprint-feed__tag--quiz {
+  color: #0e7490;
+  border-color: rgba(14, 116, 144, 0.32);
+  background: rgba(6, 182, 212, 0.12);
+}
+
+.student-footprint-feed__tag--resource {
+  color: #0f766e;
+  border-color: color-mix(in srgb, var(--color-primary) 22%, var(--color-border));
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.student-footprint-feed__tag--other {
+  color: var(--color-text-muted);
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.student-footprint-feed__detail {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
 .dashboard-empty {
   margin-top: 12px;
   padding: 24px;
@@ -1921,6 +2651,34 @@ onBeforeUnmount(() => {
 
   .dashboard-course-select {
     width: 100%;
+  }
+
+  .student-dash-header__inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .student-dash-columns {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .student-dash-col--timeline {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .student-dash-col--growth {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .student-dash-col--growth .student-growth__chart {
+    min-height: 220px;
+  }
+
+  .student-footprint-feed {
+    max-height: min(560px, 62vh);
   }
 
   .nine-grid {
