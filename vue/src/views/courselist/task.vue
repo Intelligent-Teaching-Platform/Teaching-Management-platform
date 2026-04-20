@@ -107,7 +107,7 @@
           <el-icon class="smart-paste__icon"><DocumentCopy /></el-icon>
           <div class="smart-paste__titles">
             <span class="smart-paste__title">智能粘贴</span>
-            <span class="smart-paste__desc">像填快递单一样：粘贴一整段文字，按「标签：内容」自动拆到下方表单</span>
+            <span class="smart-paste__desc">粘贴一整段文字，按「标签：内容」自动拆到下方表单</span>
           </div>
         </div>
         <el-input
@@ -116,7 +116,7 @@
           :rows="6"
           resize="vertical"
           class="smart-paste__input"
-          placeholder="示例（每行一项；冒号后可换行写多行）：&#10;任务名称：第三次实验&#10;任务类型：实验任务&#10;班级：计科2201、软工2202&#10;上机地点：理工楼A301&#10;上机时间：2025-04-20 14:00:00&#10;上机内容：安装环境&#10;实验目的：掌握基本操作&#10;实验环境：Windows 11，Python 3.10&#10;阶段1：完成环境搭建&#10;阶段2：提交实验报告"
+          placeholder="示例（每行一项；冒号后可换行写多行）：&#10;任务名称：第三次实验&#10;任务类型：实验任务&#10;班级：计科2201、软工2202&#10;上机地点：理工楼A301&#10;上机时间：2025-04-20 14:00:00&#10;上机内容：安装环境&#10;实验目的：掌握基本操作&#10;实验要求：独立完成并提交报告&#10;实验环境：Windows 11，Python 3.10&#10;阶段1：完成环境搭建&#10;阶段2：提交实验报告"
         />
         <div class="smart-paste__actions">
           <el-button type="primary" :disabled="!smartPasteText.trim()" @click="applySmartPaste">
@@ -125,7 +125,7 @@
           <el-button @click="smartPasteText = ''">清空粘贴区</el-button>
         </div>
         <p class="smart-paste__hint">
-          支持标签别名：如「名称」「类型」「地点」「时间」「实验目的」「阶段1 / 第2阶段 / q3」等；班级支持多个，用逗号或顿号分隔。
+          支持标签别名：如「名称」「类型」「地点」「时间」「实验目的」「实验要求」「实验环境」「阶段1 / 第2阶段 / q3」等；班级支持多个，用逗号或顿号分隔。
         </p>
       </div>
 
@@ -183,28 +183,7 @@
             </el-form-item>
           </div>
 
-          <!-- 实验要求 -->
-          <div class="dynamic-section" style="margin-top: 20px;">
-            <div class="section-header">
-              <span class="section-title">📝 实验要求</span>
-            </div>
-            <el-form-item label="实验目的及要求" prop="experimentPurpose">
-              <el-input
-                v-model="data.form.experimentPurpose"
-                type="textarea"
-                :rows="4"
-                placeholder="请输入实验目的及要求"
-              />
-            </el-form-item>
-            <el-form-item label="实验环境及要求" prop="experimentEnvironment">
-              <el-input
-                v-model="data.form.experimentEnvironment"
-                type="textarea"
-                :rows="4"
-                placeholder="请输入实验环境及要求（如：操作系统、软件版本等）"
-              />
-            </el-form-item>
-          </div>
+          <TaskExperimentRequirementSection :model="data.form" />
 
           <!-- 实验题目（最多9个，对应q1-q9） -->
           <div class="dynamic-section" style="margin-top: 20px;">
@@ -271,6 +250,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus, List, DataAnalysis, DocumentCopy } from '@element-plus/icons-vue'
 import TaskCard from '@/components/taskCard.vue'
+import TaskExperimentRequirementSection from '@/components/course/TaskExperimentRequirementSection.vue'
 import request from '@/utils/request'
 
 const route = useRoute()
@@ -474,8 +454,9 @@ const handleAdd = () => {
     place: '', // 上机地点
     experimentTime: '', // 上机时间
     experimentContent: '', // 上机内容
-    experimentPurpose: '', // 实验目的及要求
-    experimentEnvironment: '', // 实验环境及要求
+    experimentPurpose: '',
+    experimentRequirement: '',
+    experimentEnvironment: '',
   }
   data.selectedTemplate = ''
   data.templateParams = []
@@ -601,7 +582,7 @@ function fieldForSmartKey(keyRaw) {
     { keys: ['时间'], field: 'experimentTime', exact: true },
     { keys: ['上机内容', '上机安排'], field: 'experimentContent' },
     { keys: ['实验目的及要求', '实验目的', '目的及要求'], field: 'experimentPurpose' },
-    { keys: ['实验要求'], field: 'experimentPurpose', exact: true },
+    { keys: ['实验要求'], field: 'experimentRequirement', exact: true },
     { keys: ['实验环境及要求', '实验环境', '环境及要求', '软硬件环境'], field: 'experimentEnvironment' },
     { keys: ['任务内容', '内容描述', '作业内容', '课后内容'], field: 'content' },
     { keys: ['内容'], field: 'content', exact: true },
@@ -671,6 +652,7 @@ function applySmartPaste() {
       place: '上机地点',
       experimentContent: '上机内容',
       experimentPurpose: '实验目的',
+      experimentRequirement: '实验要求',
       experimentEnvironment: '实验环境',
       content: '任务内容',
     }
@@ -840,6 +822,7 @@ const save = async () => {
       payload.experimentTime = data.form.experimentTime || ''
       payload.experimentContent = data.form.experimentContent || ''
       payload.experimentPurpose = data.form.experimentPurpose || ''
+      payload.experimentRequirement = data.form.experimentRequirement || ''
       payload.experimentEnvironment = data.form.experimentEnvironment || ''
       // 将题目数组转换为独立字段q1-q9
       const questions = data.form.questions || []
@@ -848,7 +831,7 @@ const save = async () => {
       }
       // 将题目拼接为content字段存储（兼容旧版本）
       const questionsText = questions.map((q, i) => `${i + 1}. ${q.question}`).join('\n')
-      payload.content = `上机地点：${payload.place}\n上机时间：${payload.experimentTime}\n\n实验目的及要求：\n${payload.experimentPurpose}\n\n实验环境及要求：\n${payload.experimentEnvironment}\n\n实验题目：\n${questionsText}`
+      payload.content = `上机地点：${payload.place}\n上机时间：${payload.experimentTime}\n\n实验目的：\n${payload.experimentPurpose}\n\n实验要求：\n${payload.experimentRequirement}\n\n实验环境：\n${payload.experimentEnvironment}\n\n实验题目：\n${questionsText}`
     }
     if (data.form.id != null && data.form.id !== '') {
       payload.id = data.form.id

@@ -18,7 +18,7 @@
       <el-sub-menu index="3" v-if="isAdmin">
         <template #title>
           <el-icon><Management /></el-icon>
-          <span>信息管理</span>
+          <span class="sidebar-group-title">信息管理</span>
         </template>
         <el-menu-item index="/notice" v-if="isAdmin"><el-icon><Bell /></el-icon><span>公告信息</span></el-menu-item>
         <el-menu-item index="/college"><el-icon><OfficeBuilding /></el-icon><span>学院与专业</span></el-menu-item>
@@ -38,7 +38,7 @@
       <el-sub-menu index="2" v-if="isAdmin">
         <template #title>
           <el-icon><Avatar /></el-icon>
-          <span>用户管理</span>
+          <span class="sidebar-group-title">用户管理</span>
         </template>
         <el-menu-item index="/admin"><el-icon><User /></el-icon><span>管理员信息</span></el-menu-item>
         <el-menu-item index="/teacher"><el-icon><User /></el-icon><span>教师信息</span></el-menu-item>
@@ -119,5 +119,15 @@ const logout = () => {
 </script>
 
 <style scoped>
-/* 可以在这里添加特定的样式 */
+.app-sidebar :deep(.el-sub-menu__title .sidebar-group-title) {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  letter-spacing: 0.01em;
+}
+
+.app-sidebar :deep(.el-sub-menu__title:hover .sidebar-group-title),
+.app-sidebar :deep(.el-sub-menu.is-active > .el-sub-menu__title .sidebar-group-title) {
+  color: var(--color-primary-hover);
+}
 </style>

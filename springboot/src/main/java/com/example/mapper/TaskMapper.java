@@ -49,6 +49,7 @@ public interface TaskMapper {
         @Result(property = "experimentContent", column = "experiment_content"),
         @Result(property = "experimentPurpose", column = "experiment_purpose"),
         @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "experimentRequirement", column = "experiment_requirement"),
         @Result(property = "classIds", column = "class_ids"),
         @Result(property = "classNames", column = "class_names")
     })
@@ -68,6 +69,7 @@ public interface TaskMapper {
         @Result(property = "experimentContent", column = "experiment_content"),
         @Result(property = "experimentPurpose", column = "experiment_purpose"),
         @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "experimentRequirement", column = "experiment_requirement"),
         @Result(property = "classIds", column = "class_ids"),
         @Result(property = "classNames", column = "class_names")
     })
@@ -84,6 +86,7 @@ public interface TaskMapper {
         @Result(property = "experimentContent", column = "experiment_content"),
         @Result(property = "experimentPurpose", column = "experiment_purpose"),
         @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "experimentRequirement", column = "experiment_requirement"),
         @Result(property = "classIds", column = "class_ids"),
         @Result(property = "classNames", column = "class_names")
     })
@@ -100,6 +103,7 @@ public interface TaskMapper {
         @Result(property = "experimentContent", column = "experiment_content"),
         @Result(property = "experimentPurpose", column = "experiment_purpose"),
         @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "experimentRequirement", column = "experiment_requirement"),
         @Result(property = "classIds", column = "class_ids"),
         @Result(property = "classNames", column = "class_names")
     })
@@ -116,6 +120,7 @@ public interface TaskMapper {
         @Result(property = "experimentContent", column = "experiment_content"),
         @Result(property = "experimentPurpose", column = "experiment_purpose"),
         @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "experimentRequirement", column = "experiment_requirement"),
         @Result(property = "classIds", column = "class_ids"),
         @Result(property = "classNames", column = "class_names")
     })
@@ -139,6 +144,7 @@ public interface TaskMapper {
         @Result(property = "experimentContent", column = "experiment_content"),
         @Result(property = "experimentPurpose", column = "experiment_purpose"),
         @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "experimentRequirement", column = "experiment_requirement"),
         @Result(property = "classIds", column = "class_ids"),
         @Result(property = "classNames", column = "class_names")
     })
@@ -154,6 +160,7 @@ public interface TaskMapper {
         @Result(property = "experimentContent", column = "experiment_content"),
         @Result(property = "experimentPurpose", column = "experiment_purpose"),
         @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "experimentRequirement", column = "experiment_requirement"),
         @Result(property = "classIds", column = "class_ids"),
         @Result(property = "classNames", column = "class_names")
     })
@@ -169,6 +176,7 @@ public interface TaskMapper {
         @Result(property = "experimentContent", column = "experiment_content"),
         @Result(property = "experimentPurpose", column = "experiment_purpose"),
         @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "experimentRequirement", column = "experiment_requirement"),
         @Result(property = "classIds", column = "class_ids"),
         @Result(property = "classNames", column = "class_names"),
         @Result(property = "q1", column = "q1"),
@@ -195,6 +203,7 @@ public interface TaskMapper {
         @Result(property = "experimentContent", column = "experiment_content"),
         @Result(property = "experimentPurpose", column = "experiment_purpose"),
         @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "experimentRequirement", column = "experiment_requirement"),
         @Result(property = "classIds", column = "class_ids"),
         @Result(property = "classNames", column = "class_names")
     })
@@ -211,6 +220,7 @@ public interface TaskMapper {
         @Result(property = "experimentContent", column = "experiment_content"),
         @Result(property = "experimentPurpose", column = "experiment_purpose"),
         @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "experimentRequirement", column = "experiment_requirement"),
         @Result(property = "classIds", column = "class_ids"),
         @Result(property = "classNames", column = "class_names")
     })
@@ -227,6 +237,7 @@ public interface TaskMapper {
         @Result(property = "experimentContent", column = "experiment_content"),
         @Result(property = "experimentPurpose", column = "experiment_purpose"),
         @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "experimentRequirement", column = "experiment_requirement"),
         @Result(property = "classIds", column = "class_ids"),
         @Result(property = "classNames", column = "class_names")
     })
@@ -243,6 +254,7 @@ public interface TaskMapper {
         @Result(property = "experimentContent", column = "experiment_content"),
         @Result(property = "experimentPurpose", column = "experiment_purpose"),
         @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "experimentRequirement", column = "experiment_requirement"),
         @Result(property = "classIds", column = "class_ids"),
         @Result(property = "classNames", column = "class_names")
     })
@@ -259,6 +271,7 @@ public interface TaskMapper {
         @Result(property = "experimentContent", column = "experiment_content"),
         @Result(property = "experimentPurpose", column = "experiment_purpose"),
         @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "experimentRequirement", column = "experiment_requirement"),
         @Result(property = "classIds", column = "class_ids"),
         @Result(property = "classNames", column = "class_names")
     })
@@ -278,6 +291,7 @@ public interface TaskMapper {
         @Result(property = "experimentContent", column = "experiment_content"),
         @Result(property = "experimentPurpose", column = "experiment_purpose"),
         @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "experimentRequirement", column = "experiment_requirement"),
         @Result(property = "classIds", column = "class_ids"),
         @Result(property = "classNames", column = "class_names")
     })
@@ -294,6 +308,7 @@ public interface TaskMapper {
         @Result(property = "experimentContent", column = "experiment_content"),
         @Result(property = "experimentPurpose", column = "experiment_purpose"),
         @Result(property = "experimentEnvironment", column = "experiment_environment"),
+        @Result(property = "experimentRequirement", column = "experiment_requirement"),
         @Result(property = "classIds", column = "class_ids"),
         @Result(property = "classNames", column = "class_names")
     })
@@ -303,10 +318,10 @@ public interface TaskMapper {
     void deleteById(Integer id);
 
     @Insert("INSERT INTO task (name, content, cover, class_id, class_ids, lab, teacher_id, course_id, " +
-            "place, experiment_time, experiment_content, experiment_purpose, experiment_environment, " +
+            "place, experiment_time, experiment_content, experiment_purpose, experiment_environment, experiment_requirement, " +
             "q1, q2, q3, q4, q5, q6, q7, q8, q9) " +
             "VALUES (#{name}, #{content}, #{cover}, #{classId}, #{classIds}, #{lab}, #{teacherId}, #{courseId}, " +
-            "#{place}, #{experimentTime}, #{experimentContent}, #{experimentPurpose}, #{experimentEnvironment}, " +
+            "#{place}, #{experimentTime}, #{experimentContent}, #{experimentPurpose}, #{experimentEnvironment}, #{experimentRequirement}, " +
             "#{q1}, #{q2}, #{q3}, #{q4}, #{q5}, #{q6}, #{q7}, #{q8}, #{q9})")
     @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
     void insert(Task task);
@@ -325,6 +340,7 @@ public interface TaskMapper {
             "experiment_content = #{experimentContent}, " +
             "experiment_purpose = #{experimentPurpose}, " +
             "experiment_environment = #{experimentEnvironment}, " +
+            "experiment_requirement = #{experimentRequirement}, " +
             "q1 = #{q1}, " +
             "q2 = #{q2}, " +
             "q3 = #{q3}, " +

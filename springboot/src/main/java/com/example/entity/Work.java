@@ -25,10 +25,12 @@ public class Work {
     private String place;
     /** 上机时间（来自task表） */
     private String experimentTime;
-    /** 实验目的及要求（来自task表） */
+    /** 实验目的（来自task表） */
     private String experimentPurpose;
-    /** 实验环境及要求（来自task表） */
+    /** 实验环境（来自task表） */
     private String experimentEnvironment;
+    /** 实验要求（来自task表） */
+    private String experimentRequirement;
     /** 实验内容及步骤（来自task表） */
     private String experimentContent;
     /** 实验题目1-9（来自task表） */
@@ -330,6 +332,14 @@ public class Work {
 
     public void setExperimentEnvironment(String experimentEnvironment) {
         this.experimentEnvironment = experimentEnvironment;
+    }
+
+    public String getExperimentRequirement() {
+        return experimentRequirement;
+    }
+
+    public void setExperimentRequirement(String experimentRequirement) {
+        this.experimentRequirement = experimentRequirement;
     }
 
     public String getExperimentContent() {

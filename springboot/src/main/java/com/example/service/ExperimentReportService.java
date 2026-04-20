@@ -277,6 +277,7 @@ public class ExperimentReportService {
         map.put("experimentContent", nullToEmpty(work.getExperimentContent()));
         map.put("experimentPurpose", nullToEmpty(work.getExperimentPurpose()));
         map.put("experimentEnvironment", nullToEmpty(work.getExperimentEnvironment()));
+        map.put("experimentRequirement", nullToEmpty(work.getExperimentRequirement()));
 
         return map;
     }

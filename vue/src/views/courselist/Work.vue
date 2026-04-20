@@ -205,10 +205,13 @@
             <el-form-item label="上机内容">
               <el-input v-model="data.form.taskContent" type="textarea" :rows="3" disabled />
             </el-form-item>
-            <el-form-item label="实验目的及要求">
+            <el-form-item label="实验目的">
               <el-input v-model="data.form.taskPurpose" type="textarea" :rows="4" disabled />
             </el-form-item>
-            <el-form-item label="实验环境及要求">
+            <el-form-item label="实验要求">
+              <el-input v-model="data.form.taskRequirement" type="textarea" :rows="4" disabled />
+            </el-form-item>
+            <el-form-item label="实验环境">
               <el-input v-model="data.form.taskEnvironment" type="textarea" :rows="4" disabled />
             </el-form-item>
           </div>
@@ -327,10 +330,13 @@
             <el-form-item label="上机内容">
               <el-input v-model="data.form.taskContent" type="textarea" :rows="3" disabled />
             </el-form-item>
-            <el-form-item label="实验目的及要求">
+            <el-form-item label="实验目的">
               <el-input v-model="data.form.taskPurpose" type="textarea" :rows="4" disabled />
             </el-form-item>
-            <el-form-item label="实验环境及要求">
+            <el-form-item label="实验要求">
+              <el-input v-model="data.form.taskRequirement" type="textarea" :rows="4" disabled />
+            </el-form-item>
+            <el-form-item label="实验环境">
               <el-input v-model="data.form.taskEnvironment" type="textarea" :rows="4" disabled />
             </el-form-item>
           </div>
@@ -1050,6 +1056,7 @@ const loadTaskDetail = async (taskId) => {
       data.form.taskTime = task.experimentTime || '';
       data.form.taskContent = task.experimentContent || '';
       data.form.taskPurpose = task.experimentPurpose || '';
+      data.form.taskRequirement = task.experimentRequirement || '';
       data.form.taskEnvironment = task.experimentEnvironment || '';
       // 将q1-q9字段转换为题目数组
       taskQuestions.value = [];
@@ -1366,8 +1373,8 @@ const exportToWord = async (row) => {
       time = experimentTime.split(' ')[0] || experimentTime.split('T')[0] || experimentTime;
     }
     
-    // 实验目的及要求、实验环境
     const purpose = row.experimentPurpose || "";
+    const requirement = row.experimentRequirement || "";
     const environment = row.experimentEnvironment || "";
     
     // 调试日志：打印完整的 row 对象
@@ -1376,6 +1383,7 @@ const exportToWord = async (row) => {
       taskId: row.taskId,
       experimentTime: row.experimentTime,
       experimentPurpose: row.experimentPurpose,
+      experimentRequirement: row.experimentRequirement,
       experimentEnvironment: row.experimentEnvironment,
       q1: row.q1, q2: row.q2, q3: row.q3,
       tip1: row.tip1, tip2: row.tip2, tip3: row.tip3,
@@ -1414,6 +1422,7 @@ const exportToWord = async (row) => {
       // 实验基本信息（使用task表的experiment_content作为上机内容）
       name: row.experimentContent || "",
       purpose,
+      requirement,
       environment,
       // 题目与答案（q1-q9 是题目，tip1-tip9 是学生答案）
       ...questionAnswerData,

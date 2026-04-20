@@ -16,6 +16,7 @@ public interface WorkMapper {
             "s.code as studentCode, c.name as className, co.name as courseName, " +
             "ta.place as place, ta.experiment_time as experimentTime, " +
             "ta.experiment_purpose as experimentPurpose, ta.experiment_environment as experimentEnvironment, " +
+            "ta.experiment_requirement as experimentRequirement, " +
             "ta.experiment_content as experimentContent, " +
             "ta.q1 as q1, ta.q2 as q2, ta.q3 as q3, ta.q4 as q4, ta.q5 as q5, " +
             "ta.q6 as q6, ta.q7 as q7, ta.q8 as q8, ta.q9 as q9, " +
@@ -32,6 +33,7 @@ public interface WorkMapper {
             "s.code as studentCode, c.name as className, co.name as courseName, " +
             "ta.place as place, ta.experiment_time as experimentTime, " +
             "ta.experiment_purpose as experimentPurpose, ta.experiment_environment as experimentEnvironment, " +
+            "ta.experiment_requirement as experimentRequirement, " +
             "ta.experiment_content as experimentContent, " +
             "ta.q1 as q1, ta.q2 as q2, ta.q3 as q3, ta.q4 as q4, ta.q5 as q5, " +
             "ta.q6 as q6, ta.q7 as q7, ta.q8 as q8, ta.q9 as q9, " +
@@ -61,6 +63,7 @@ public interface WorkMapper {
             "s.code as studentCode, c.name as className, co.name as courseName, " +
             "ta.place as place, ta.experiment_time as experimentTime, " +
             "ta.experiment_purpose as experimentPurpose, ta.experiment_environment as experimentEnvironment, " +
+            "ta.experiment_requirement as experimentRequirement, " +
             "ta.experiment_content as experimentContent, " +
             "ta.q1 as q1, ta.q2 as q2, ta.q3 as q3, ta.q4 as q4, ta.q5 as q5, " +
             "ta.q6 as q6, ta.q7 as q7, ta.q8 as q8, ta.q9 as q9, " +
@@ -79,6 +82,7 @@ public interface WorkMapper {
             "s.code as studentCode, c.name as className, co.name as courseName, " +
             "ta.place as place, ta.experiment_time as experimentTime, " +
             "ta.experiment_purpose as experimentPurpose, ta.experiment_environment as experimentEnvironment, " +
+            "ta.experiment_requirement as experimentRequirement, " +
             "ta.experiment_content as experimentContent, " +
             "ta.q1 as q1, ta.q2 as q2, ta.q3 as q3, ta.q4 as q4, ta.q5 as q5, " +
             "ta.q6 as q6, ta.q7 as q7, ta.q8 as q8, ta.q9 as q9, " +
@@ -96,6 +100,7 @@ public interface WorkMapper {
             "s.code as studentCode, c.name as className, co.name as courseName, " +
             "ta.place as place, ta.experiment_time as experimentTime, " +
             "ta.experiment_purpose as experimentPurpose, ta.experiment_environment as experimentEnvironment, " +
+            "ta.experiment_requirement as experimentRequirement, " +
             "ta.experiment_content as experimentContent, " +
             "ta.q1 as q1, ta.q2 as q2, ta.q3 as q3, ta.q4 as q4, ta.q5 as q5, " +
             "ta.q6 as q6, ta.q7 as q7, ta.q8 as q8, ta.q9 as q9, " +
@@ -113,6 +118,7 @@ public interface WorkMapper {
             "s.code as studentCode, c.name as className, co.name as courseName, " +
             "ta.place as place, ta.experiment_time as experimentTime, " +
             "ta.experiment_purpose as experimentPurpose, ta.experiment_environment as experimentEnvironment, " +
+            "ta.experiment_requirement as experimentRequirement, " +
             "ta.experiment_content as experimentContent, " +
             "ta.q1 as q1, ta.q2 as q2, ta.q3 as q3, ta.q4 as q4, ta.q5 as q5, " +
             "ta.q6 as q6, ta.q7 as q7, ta.q8 as q8, ta.q9 as q9, " +
@@ -133,6 +139,7 @@ public interface WorkMapper {
             "s.code as studentCode, c.name as className, co.name as courseName, " +
             "ta.place as place, ta.experiment_time as experimentTime, " +
             "ta.experiment_purpose as experimentPurpose, ta.experiment_environment as experimentEnvironment, " +
+            "ta.experiment_requirement as experimentRequirement, " +
             "ta.experiment_content as experimentContent, " +
             "ta.q1 as q1, ta.q2 as q2, ta.q3 as q3, ta.q4 as q4, ta.q5 as q5, " +
             "ta.q6 as q6, ta.q7 as q7, ta.q8 as q8, ta.q9 as q9, " +
@@ -154,6 +161,7 @@ public interface WorkMapper {
             "s.code as studentCode, c.name as className, co.name as courseName, " +
             "ta.place as place, ta.experiment_time as experimentTime, " +
             "ta.experiment_purpose as experimentPurpose, ta.experiment_environment as experimentEnvironment, " +
+            "ta.experiment_requirement as experimentRequirement, " +
             "ta.experiment_content as experimentContent, " +
             "ta.q1 as q1, ta.q2 as q2, ta.q3 as q3, ta.q4 as q4, ta.q5 as q5, " +
             "ta.q6 as q6, ta.q7 as q7, ta.q8 as q8, ta.q9 as q9, " +
@@ -175,6 +183,7 @@ public interface WorkMapper {
             "s.code as studentCode, c.name as className, co.name as courseName, " +
             "ta.place as place, ta.experiment_time as experimentTime, " +
             "ta.experiment_purpose as experimentPurpose, ta.experiment_environment as experimentEnvironment, " +
+            "ta.experiment_requirement as experimentRequirement, " +
             "ta.experiment_content as experimentContent, " +
             "ta.q1 as q1, ta.q2 as q2, ta.q3 as q3, ta.q4 as q4, ta.q5 as q5, " +
             "ta.q6 as q6, ta.q7 as q7, ta.q8 as q8, ta.q9 as q9, " +
@@ -195,6 +204,7 @@ public interface WorkMapper {
             "s.code as studentCode, c.name as className, co.name as courseName, " +
             "ta.place as place, ta.experiment_time as experimentTime, " +
             "ta.experiment_purpose as experimentPurpose, ta.experiment_environment as experimentEnvironment, " +
+            "ta.experiment_requirement as experimentRequirement, " +
             "ta.experiment_content as experimentContent, " +
             "ta.q1 as q1, ta.q2 as q2, ta.q3 as q3, ta.q4 as q4, ta.q5 as q5, " +
             "ta.q6 as q6, ta.q7 as q7, ta.q8 as q8, ta.q9 as q9, " +
@@ -212,6 +222,7 @@ public interface WorkMapper {
             "s.code as studentCode, c.name as className, co.name as courseName, " +
             "ta.place as place, ta.experiment_time as experimentTime, " +
             "ta.experiment_purpose as experimentPurpose, ta.experiment_environment as experimentEnvironment, " +
+            "ta.experiment_requirement as experimentRequirement, " +
             "ta.experiment_content as experimentContent, " +
             "ta.q1 as q1, ta.q2 as q2, ta.q3 as q3, ta.q4 as q4, ta.q5 as q5, " +
             "ta.q6 as q6, ta.q7 as q7, ta.q8 as q8, ta.q9 as q9, " +

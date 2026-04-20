@@ -120,10 +120,12 @@ public class Task {
     private String experimentTime;
     /** Word模板：上机内容 */
     private String experimentContent;
-    /** Word模板：实验目的及要求 */
+    /** Word模板：实验目的 */
     private String experimentPurpose;
-    /** Word模板：实验环境及要求 */
+    /** Word模板：实验环境 */
     private String experimentEnvironment;
+    /** Word模板：实验要求（步骤、提交物、评分要点等） */
+    private String experimentRequirement;
     /** Word模板：实验题目1 */
     private String q1;
     /** Word模板：实验题目2 */
@@ -197,6 +199,14 @@ public class Task {
 
     public void setExperimentEnvironment(String experimentEnvironment) {
         this.experimentEnvironment = experimentEnvironment;
+    }
+
+    public String getExperimentRequirement() {
+        return experimentRequirement;
+    }
+
+    public void setExperimentRequirement(String experimentRequirement) {
+        this.experimentRequirement = experimentRequirement;
     }
 
     public String getQ1() {

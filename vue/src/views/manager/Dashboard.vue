@@ -125,7 +125,14 @@
 
         <el-card class="grid-block dash-card dash-chart-card" shadow="never">
           <template #header><div class="card-header">教师职称分布</div></template>
-          <div ref="mainRight1Ref" class="chart chart-panel chart-panel--pie" />
+          <div class="title-pie-wrap" aria-label="教师职称分布图与明细">
+            <div ref="mainRight1Ref" class="chart chart-panel chart-panel--pie title-pie-chart" />
+            <div class="title-pie-legend" aria-label="教师职称分类说明">
+              <div v-for="item in teacherTitleTextList" :key="item.name" class="title-pie-legend__item">
+                <span class="title-pie-legend__name">{{ item.name }}：{{ item.value }}个</span>
+              </div>
+            </div>
+          </div>
         </el-card>
 
         <!-- 第三行 -->
@@ -647,10 +654,11 @@ const adminFallback = {
     ],
   },
   right1: [
-    { name: '教授', value: 2 },
+    { name: '工程师', value: 2 },
+    { name: '高级工程师(副高级)', value: 1 },
+    { name: '讲师(中级)', value: 6 },
     { name: '副教授', value: 3 },
-    { name: '讲师', value: 6 },
-    { name: '助教', value: 2 },
+    { name: '教授(正高级)', value: 2 },
   ],
   right2: {
     threshold: 80,
@@ -796,6 +804,50 @@ const unsignedNameList = computed(() => {
     .filter(Boolean)
 })
 
+const teacherTitleBuckets = [
+  '工程师',
+  '高级工程师(副高级)',
+  '讲师(中级)',
+  '副教授',
+  '教授(正高级)',
+]
+
+const normalizeTeacherTitleBucket = (rawTitle) => {
+  const t = String(rawTitle || '').replace(/\s+/g, '').trim()
+  if (!t) return null
+
+  if (t.includes('教授') && !t.includes('副教授')) return '教授(正高级)'
+  if (t.includes('副教授')) return '副教授'
+  if (t.includes('高级工程师') || (t.includes('工程师') && t.includes('副高级'))) return '高级工程师(副高级)'
+  if (t.includes('讲师') || t.includes('中级')) return '讲师(中级)'
+  if (t.includes('工程师')) return '工程师'
+
+  return null
+}
+
+/**
+ * 将后端教师 title 原始统计归并到指定 5 类；未知职称不纳入图表。
+ */
+const buildTeacherTitleStats = (rawList) => {
+  const base = Object.fromEntries(teacherTitleBuckets.map((k) => [k, 0]))
+  const list = Array.isArray(rawList) ? rawList : []
+
+  list.forEach((item) => {
+    const bucket = normalizeTeacherTitleBucket(item?.name)
+    if (!bucket) return
+    base[bucket] += Number(item?.value || 0)
+  })
+
+  return teacherTitleBuckets.map((name) => ({ name, value: base[name] }))
+}
+
+/** 职称饼图右侧说明：与 main.right1 顺序一致，保证始终有 5 行 */
+const teacherTitleTextList = computed(() => {
+  const stats = Array.isArray(main.right1) ? main.right1 : []
+  const map = Object.fromEntries(stats.map((i) => [i?.name, Number(i?.value || 0)]))
+  return teacherTitleBuckets.map((name) => ({ name, value: map[name] || 0 }))
+})
+
 // chart refs
 const mainLeft2Ref = ref()
 const mainMid1Ref = ref()
@@ -939,6 +991,16 @@ const dashPalette = ['#0d9488', '#14b8a6', '#0e7490', '#f59e0b', '#0891b2', '#05
 const chartTitleStyle = { color: '#64748b', fontSize: 12, fontWeight: 600 }
 const axisLine = { lineStyle: { color: 'rgba(15, 23, 42, 0.12)' } }
 const axisLabel = { color: '#64748b', fontSize: 11 }
+/** 饼图悬浮提示：比默认 14px 更小，与轴标签协调 */
+const pieTooltipTextStyle = { color: '#64748b', fontSize: 10, lineHeight: 14 }
+/** 饼图 tooltip 外框：内边距与圆角略小于默认，整体更紧凑 */
+const pieTooltip = {
+  trigger: 'item',
+  textStyle: pieTooltipTextStyle,
+  padding: [3, 6],
+  borderWidth: 1,
+  borderRadius: 4,
+}
 const splitLine = { lineStyle: { color: 'rgba(15, 23, 42, 0.06)' } }
 
 const readCssColor = (name, fallback) => {
@@ -1149,13 +1211,13 @@ const renderPie = (chart, list, title) => {
   safeSet(chart, {
     color: dashPalette,
     title: { text: title, left: 'center', textStyle: chartTitleStyle },
-    tooltip: { trigger: 'item' },
+    tooltip: pieTooltip,
     series: [
       {
         type: 'pie',
         // 职称分布：略小的环，留白多一些（原 52%–97% 过满）
         radius: ['38%', '68%'],
-        center: ['50%', '50%'],
+        center: ['44%', '50%'],
         // 去掉连接线与标签状态
         label: { show: false },
         labelLine: { show: false },
@@ -1171,12 +1233,12 @@ const renderSigninPie = (chart, list, title) => {
   safeSet(chart, {
     color: dashPalette,
     title: { text: title, left: 'center', textStyle: chartTitleStyle },
-    tooltip: { trigger: 'item' },
+    tooltip: pieTooltip,
     series: [
       {
         type: 'pie',
         radius: ['40%', '68%'],
-        center: ['50%', '50%'],
+        center: ['44%', '50%'],
         label: { show: false },
         labelLine: { show: false },
         emphasis: { scale: false },
@@ -1196,7 +1258,7 @@ const renderRadar = (chart, data, title) => {
     color: dashPalette,
     title: { text: title, left: 'center', textStyle: chartTitleStyle },
     tooltip: {},
-    legend: { bottom: 8, type: 'scroll', textStyle: { ...axisLabel } },
+    legend: { bottom: 22, type: 'scroll', textStyle: { ...axisLabel } },
     radar: {
       indicator: indicators,
       radius: '65%',
@@ -1287,10 +1349,11 @@ const loadAdmin = async () => {
       results[5].status === 'fulfilled'
         ? results[5].value?.data || adminFallback.mid3
         : adminFallback.mid3
-    main.right1 =
+    const adminTitleRaw =
       results[6].status === 'fulfilled'
         ? results[6].value?.data || adminFallback.right1
         : adminFallback.right1
+    main.right1 = buildTeacherTitleStats(adminTitleRaw)
     main.right2 =
       results[7].status === 'fulfilled'
         ? results[7].value?.data || adminFallback.right2
@@ -1867,12 +1930,10 @@ onBeforeUnmount(() => {
   min-height: 0;
 }
 
-/* 雷达图：固定高度，不产生滚动条 */
 .dash-radar-chart-scroll {
   width: 100%;
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
 }
 
 .chart.dash-radar-chart-inner {
@@ -1927,6 +1988,66 @@ onBeforeUnmount(() => {
 .chart-panel--pie {
   min-height: var(--dash-chart-pie-h);
   height: var(--dash-chart-pie-h);
+}
+
+.title-pie-wrap {
+  display: grid;
+  grid-template-columns: minmax(128px, 0.9fr) minmax(140px, 1fr);
+  gap: 12px;
+  align-items: stretch;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.title-pie-chart {
+  min-width: 0;
+  justify-self: start;
+  padding-left: 2px;
+}
+
+.title-pie-legend {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-primary-soft) 12%, var(--color-bg-elevated));
+  padding: 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  overflow: auto;
+  min-height: 0;
+  max-width: 100%;
+}
+
+.title-pie-legend__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  align-items: baseline;
+  padding: 7px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.title-pie-legend__name {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--color-text-muted);
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+
+
+@media (max-width: 900px) {
+  .title-pie-wrap {
+    grid-template-columns: 1fr;
+  }
+
+  .title-pie-chart {
+    min-height: 150px;
+    height: 150px;
+  }
 }
 
 /* 签到卡：左侧饼图与标题固定，仅两侧名单区域独立纵向滚动 */
