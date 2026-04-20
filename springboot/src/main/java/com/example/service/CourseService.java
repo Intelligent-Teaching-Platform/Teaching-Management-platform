@@ -254,5 +254,12 @@ public class CourseService {
         return courses.isEmpty() ? null : courses.get(0);
     }
 
+    /** 按主键查询课程（含上课地点 location 等） */
+    public Course selectById(Integer id) {
+        if (id == null) {
+            return null;
+        }
+        return courseMapper.selectById(id);
+    }
 
 }

@@ -117,6 +117,15 @@ public class CourseController {
         return Result.success(list);
     }
 
+    /**
+     * 按 id 查询单门课程（发布任务等场景：取上课地点等）
+     */
+    @GetMapping("/selectById/{id}")
+    public Result selectById(@PathVariable Integer id) {
+        Course course = courseService.selectById(id);
+        return course == null ? Result.error("课程不存在") : Result.success(course);
+    }
+
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Result importCourse(@RequestParam("file") MultipartFile file) {
         try {
