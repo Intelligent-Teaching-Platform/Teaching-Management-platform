@@ -12,10 +12,6 @@
         </p>
       </div>
       <div class="task-hero__actions">
-        <el-button v-if="isTeacher" type="success" class="task-hero__cta" @click="goToAnalysis">
-          <el-icon><DataAnalysis /></el-icon>
-          可视化分析
-        </el-button>
         <el-button v-if="isTeacher" type="primary" class="task-hero__cta" @click="handleAdd">
           <el-icon><Plus /></el-icon>
           新建任务
@@ -90,7 +86,7 @@
       :title="data.form.id ? '编辑任务' : '新建任务'"
       direction="rtl"
       size="520px"
-      :close-on-click-modal="false"
+      :close-on-click-modal="true"
       destroy-on-close
       class="task-drawer"
       @closed="resetForm"
@@ -116,7 +112,7 @@
           :rows="6"
           resize="vertical"
           class="smart-paste__input"
-          placeholder="示例（每行一项；冒号后可换行写多行）：&#10;任务名称：第三次实验&#10;任务类型：实验任务&#10;班级：计科2201、软工2202&#10;上机地点：理工楼A301&#10;上机时间：2025-04-20 14:00:00&#10;上机内容：安装环境&#10;实验目的：掌握基本操作&#10;实验要求：独立完成并提交报告&#10;实验环境：Windows 11，Python 3.10&#10;阶段1：完成环境搭建&#10;阶段2：提交实验报告"
+          placeholder="示例（每行一项；冒号后可换行写多行）：&#10;任务名称：第三次实验&#10;任务类型：实验任务&#10;班级：计科2201、软工2202&#10;上机地点：理工楼A301&#10;上机时间：2025-04-20 14:00:00&#10;实验目的：掌握基本操作&#10;实验要求：独立完成并提交报告&#10;实验环境：Windows 11，Python 3.10&#10;阶段1：完成环境搭建&#10;阶段2：提交实验报告"
         />
         <div class="smart-paste__actions">
           <el-button type="primary" :disabled="!smartPasteText.trim()" @click="applySmartPaste">
@@ -162,7 +158,16 @@
               <span class="section-title">📍 上机信息</span>
             </div>
             <el-form-item label="上机地点" prop="place">
-              <el-input v-model="data.form.place" placeholder="请输入上机地点（如：实验楼301）" />
+              <div class="place-field">
+                <el-input
+                  v-model="data.form.place"
+                  placeholder="自动填充为课程「上课地点」，可修改"
+                />
+                <el-button type="primary" link class="place-sync-btn" :disabled="!courseId" @click="syncPlaceFromCourse">
+                  从课程同步
+                </el-button>
+              </div>
+              <!-- <p class="field-hint">进入本页即预取课程上课地点；新建或切换为实验任务时会自动填入。也可点「从课程同步」重新拉取。</p> -->
             </el-form-item>
             <el-form-item label="上机时间" prop="experimentTime">
               <el-date-picker
@@ -172,13 +177,15 @@
                 style="width: 100%"
                 value-format="YYYY-MM-DD HH:mm:ss"
               />
+              <p class="field-hint">新建任务时默认从今天 09:00 开始，请按实际上机时间调整。</p>
             </el-form-item>
-            <el-form-item label="上机内容" prop="experimentContent">
+            <!-- 仅编辑旧任务时保留（新建任务不再填写上机内容） -->
+            <el-form-item v-if="data.form.id" label="上机内容" prop="experimentContent">
               <el-input
                 v-model="data.form.experimentContent"
                 type="textarea"
                 :rows="3"
-                placeholder="请输入上机内容"
+                placeholder="历史任务中的上机内容，可按需修改"
               />
             </el-form-item>
           </div>
@@ -245,21 +252,22 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { reactive, ref, onMounted, computed, watch, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus, List, DataAnalysis, DocumentCopy } from '@element-plus/icons-vue'
+import { Search, Plus, List, DocumentCopy } from '@element-plus/icons-vue'
 import TaskCard from '@/components/taskCard.vue'
 import TaskExperimentRequirementSection from '@/components/course/TaskExperimentRequirementSection.vue'
 import request from '@/utils/request'
 
 const route = useRoute()
-const router = useRouter()
 const formRef = ref(null)
 const loading = ref(false)
 const saving = ref(false)
 const searchQuery = ref('')
 const smartPasteText = ref('')
+/** 当前课程的上课地点（缓存，用于上机地点自动填充） */
+const cachedCoursePlace = ref('')
 
 const courseId = computed(() => {
   const id = route.query.id || route.params.id
@@ -428,32 +436,58 @@ const resetSearch = () => {
   load()
 }
 
-// 跳转到可视化分析页面
-const goToAnalysis = () => {
-  router.push({
-    path: '/course/courseDetail/taskAnalysis',
-    query: { 
-      id: courseId.value,
-      courseName: courseName.value 
-    }
-  })
+/** 新建实验任务：上机时间默认今日 09:00:00（本地日期） */
+function getDefaultExperimentTimeToday() {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day} 09:00:00`
 }
 
-const handleAdd = () => {
+/** 拉取课程「上课地点」并写入缓存，供上机地点自动填充 */
+async function fetchCoursePlace() {
+  if (courseId.value == null || Number.isNaN(courseId.value)) {
+    cachedCoursePlace.value = ''
+    return ''
+  }
+  try {
+    const res = await request.get(`/course/selectById/${courseId.value}`, {
+      _ignoreNotFound: true,
+    })
+    if (res.code === '200' && res.data) {
+      const loc = String(res.data.location || '').trim()
+      cachedCoursePlace.value = loc
+      return loc
+    }
+  } catch (e) {
+    console.error('加载课程上课地点失败:', e)
+  }
+  cachedCoursePlace.value = ''
+  return ''
+}
+
+async function syncPlaceFromCourse() {
+  await fetchCoursePlace()
+  if (cachedCoursePlace.value) data.form.place = cachedCoursePlace.value
+}
+
+const handleAdd = async () => {
   if (!isTeacher.value) return
   if (courseId.value == null || Number.isNaN(courseId.value)) {
     ElMessage.warning('请先进入具体课程后再发布任务（需带上课程信息）')
     return
   }
+  if (!cachedCoursePlace.value) await fetchCoursePlace()
   smartPasteText.value = ''
   data.form = {
     courseId: courseId.value,
     classIds: [],
     lab: 2, // 默认实验任务
     questions: [], // 实验题目列表
-    place: '', // 上机地点
-    experimentTime: '', // 上机时间
-    experimentContent: '', // 上机内容
+    place: cachedCoursePlace.value || (await fetchCoursePlace()),
+    experimentTime: getDefaultExperimentTimeToday(),
+    experimentContent: '',
     experimentPurpose: '',
     experimentRequirement: '',
     experimentEnvironment: '',
@@ -899,6 +933,29 @@ watch(
   }
 )
 
+/** 课程切换时预取上课地点，便于打开抽屉即自动填充上机地点 */
+watch(
+  courseId,
+  (id) => {
+    if (id != null && !Number.isNaN(id)) fetchCoursePlace()
+    else cachedCoursePlace.value = ''
+  },
+  { immediate: true }
+)
+
+/** 抽屉内改为「实验任务」且上机地点为空时，自动填入课程上课地点 */
+watch(
+  () => [data.formVisible, data.form.lab],
+  async ([visible, lab]) => {
+    if (!visible || lab !== 2) return
+    if (courseId.value == null || Number.isNaN(courseId.value)) return
+    await nextTick()
+    if ((data.form.place || '').trim()) return
+    if (!cachedCoursePlace.value) await fetchCoursePlace()
+    if (cachedCoursePlace.value) data.form.place = cachedCoursePlace.value
+  }
+)
+
 onMounted(() => {
   loadClass()
   load()
@@ -1153,6 +1210,25 @@ onMounted(() => {
 
 .drawer-form {
   padding: 4px 4px 0;
+}
+
+.field-hint {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: #909399;
+  line-height: 1.45;
+}
+
+.place-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+
+  :deep(.el-input) {
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .drawer-footer {
